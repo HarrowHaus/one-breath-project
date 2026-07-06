@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Next.js build output
+.next/
+out/
+next-env.d.ts
+
+# Cloudflare
+.wrangler/
+.dev.vars
+
+# Environment / secrets (NEVER commit these)
+.env
+.env.*
+!.env.example
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Misc
+*.local
+coverage/
+
+# NOTE: /docs and /handoff are project context and MUST be committed. Do not ignore them.
