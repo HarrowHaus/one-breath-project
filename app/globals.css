@@ -124,12 +124,17 @@ input:focus-visible,
   font-size: 1.25rem;
   max-width: 60ch;
 }
-/* The one primary action per page uses the ember accent. */
 .obp-hero__cta.usa-button {
   margin-top: 1.5rem;
-  background-color: var(--obp-accent);
 }
-.obp-hero__cta.usa-button:hover {
+
+/* The single primary (conversion) action per page uses the ember accent. */
+.obp-cta.usa-button {
+  background-color: var(--obp-accent);
+  box-shadow: none;
+}
+.obp-cta.usa-button:hover,
+.obp-cta.usa-button:focus {
   background-color: #b63f11;
 }
 
@@ -237,4 +242,15 @@ input:focus-visible,
   padding-top: 1rem;
   margin-top: 2rem;
   color: var(--obp-primary-dark);
+}
+
+/* ---- Landing scale band ---- */
+.obp-section-tint {
+  background: var(--obp-tint);
+}
+/* One number at a time — give each sourced figure breathing room. */
+.obp-scale-line {
+  font-size: 1.2rem;
+  margin: 1.25rem 0;
+  max-width: 68ch;
 }

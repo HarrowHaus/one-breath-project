@@ -23,7 +23,10 @@ export function Hero({
           <h1 className="obp-hero__title">{title}</h1>
           {children ? <div className="obp-hero__lede">{children}</div> : null}
           {cta ? (
-            <Link className="usa-button usa-button--big obp-hero__cta" href={cta.href}>
+            <Link
+              className="usa-button usa-button--outline usa-button--big obp-hero__cta"
+              href={cta.href}
+            >
               {cta.label}
             </Link>
           ) : null}
