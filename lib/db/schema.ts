@@ -43,6 +43,11 @@ export const metrics = pgTable(
     uniqueIndex("metrics_latest_uniq")
       .on(t.indicator, t.geoId)
       .where(sql`${t.isLatest}`),
+    // One row per indicator+geography+year — the upsert target for connectors
+    // that ingest year-specific figures (CDC Tracking, NEISS, WONDER).
+    uniqueIndex("metrics_year_uniq")
+      .on(t.indicator, t.geoId, t.year)
+      .where(sql`${t.year} is not null`),
   ],
 );
 

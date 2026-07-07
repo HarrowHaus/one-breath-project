@@ -259,3 +259,58 @@ export async function verifyResource(id: number): Promise<void> {
   if (!db) throw new Error("Database is not configured.");
   await db.update(resources).set({ verifiedAt: new Date() }).where(eq(resources.id, id));
 }
+
+// ---- Connector ingestion (Phase 2B) ----
+
+export type YearMetricInput = {
+  indicator: string;
+  geo: string;
+  geoLevel?: string;
+  year: number;
+  valueDisplay?: string | null;
+  valueNumeric?: number | null;
+  ciLow?: number | null;
+  ciHigh?: number | null;
+  source: string;
+  measuredOrModeled: string;
+  notes?: string | null;
+};
+
+// Upsert a year-specific figure (idempotent on indicator+geo+year). Connectors
+// call this for each row they ingest, so re-running a connector refreshes rather
+// than duplicates. Every row carries its source and Measured/Modeled tag.
+export async function upsertYearMetric(input: YearMetricInput): Promise<void> {
+  const db = getDb();
+  if (!db) throw new Error("Database is not configured.");
+  await db
+    .insert(metrics)
+    .values({
+      indicator: input.indicator,
+      geoId: input.geo,
+      geoLevel: input.geoLevel ?? (input.geo === "US" ? "nation" : "state"),
+      year: input.year,
+      isLatest: false,
+      valueDisplay: input.valueDisplay ?? null,
+      valueNumeric: input.valueNumeric ?? null,
+      ciLow: input.ciLow ?? null,
+      ciHigh: input.ciHigh ?? null,
+      source: input.source,
+      measuredOrModeled: input.measuredOrModeled,
+      notes: input.notes ?? null,
+    })
+    .onConflictDoUpdate({
+      target: [metrics.indicator, metrics.geoId, metrics.year],
+      targetWhere: sql`${metrics.year} is not null`,
+      set: {
+        valueDisplay: input.valueDisplay ?? null,
+        valueNumeric: input.valueNumeric ?? null,
+        ciLow: input.ciLow ?? null,
+        ciHigh: input.ciHigh ?? null,
+        source: input.source,
+        measuredOrModeled: input.measuredOrModeled,
+        notes: input.notes ?? null,
+        retrievedAt: sql`now()`,
+        updatedAt: sql`now()`,
+      },
+    });
+}

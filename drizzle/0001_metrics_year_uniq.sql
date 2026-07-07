@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "metrics_year_uniq" ON "metrics" USING btree ("indicator","geo_id","year") WHERE "metrics"."year" is not null;
