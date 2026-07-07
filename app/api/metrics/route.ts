@@ -33,11 +33,12 @@ export async function GET(request: Request) {
       },
     });
   } catch (err: unknown) {
-    // Surface the real DB error (temporary, for bring-up diagnosis).
-    const e = err as { name?: string; code?: string; message?: string };
+    // A transient DB error degrades gracefully — hide the figure rather than
+    // surface internals or a 500. Don't cache the miss.
+    console.error("GET /api/metrics failed:", (err as Error)?.message);
     return NextResponse.json(
-      { found: false, error: e?.message, name: e?.name, code: e?.code },
-      { status: 500 },
+      { found: false },
+      { status: 200, headers: { "Cache-Control": "no-store" } },
     );
   }
 }

@@ -39,23 +39,33 @@ either provider — a drop-in later.
 dedicated `extensions` schema, the Supabase-recommended way). Phase 2A/2B store
 plain lat/lng.
 
-## 2. Set the environment variables
+## 2. How the app connects
 
-Two values are needed:
+**Production runs through Cloudflare Hyperdrive.** Raw Postgres from a Worker is
+unreliable (the TLS socket dies mid-handshake); Hyperdrive pools connections and
+handles the socket/TLS to Supabase. It's already wired:
 
-- `DATABASE_URL` — the connection string from step 1.
+- Hyperdrive config **`one-breath-db`** (Cloudflare → Storage & databases →
+  Postgres & MySQL) points at Supabase using a dedicated least-privilege role
+  **`obp_app`** (not the `postgres` superuser).
+- `wrangler.jsonc` binds it as `HYPERDRIVE`; `lib/db` uses that binding
+  automatically on Workers. **No `DATABASE_URL` secret is needed on the Worker.**
+
+The only Worker secret to set is:
+
 - `ADMIN_PASSWORD` — a password you choose, for the `/manage` admin screen.
+  (Cloudflare → your `one-breath-project` Worker → **Settings → Variables and
+  Secrets** → add as a **Secret**.)
 
-**Local (`.env`, already git-ignored):**
+**Local dev** still uses a plain connection string in `.env` (git-ignored):
 
 ```
-DATABASE_URL=postgresql://…?sslmode=require
+DATABASE_URL=postgresql://…       # local Postgres, or a Supabase string
 ADMIN_PASSWORD=choose-a-strong-password
 ```
 
-**Production (Cloudflare):** dashboard → your `one-breath-project` Worker →
-**Settings → Variables and Secrets** → add both as **Secrets** (encrypted), then
-redeploy (or push a commit).
+`db:migrate` and `db:seed` (below) also read `DATABASE_URL`, so run them from a
+machine that has it set.
 
 ## 3. Create the tables and seed the real figures
 
