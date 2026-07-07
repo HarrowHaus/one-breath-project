@@ -40,10 +40,10 @@ const seeds = [
   },
 ];
 
-const needsSsl = /sslmode=require|neon\.tech|supabase\.co/.test(url);
+const isLocal = /@(localhost|127\.0\.0\.1|\[::1\])[:/]/.test(url);
 const client = new pg.Client({
   connectionString: url,
-  ssl: needsSsl ? { rejectUnauthorized: true } : undefined,
+  ssl: isLocal ? undefined : { rejectUnauthorized: true },
 });
 
 await client.connect();

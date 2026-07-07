@@ -22,12 +22,13 @@ export function getDb(): DB | null {
   if (!url) return null;
   if (db) return db;
 
-  // Enable SSL for managed providers (Neon/Supabase include sslmode=require).
-  const needsSsl = /sslmode=require|neon\.tech|supabase\.co/.test(url);
+  // Managed providers (Neon, Supabase, etc.) require SSL; a local Postgres does
+  // not. Anything not pointed at localhost is treated as managed.
+  const isLocal = /@(localhost|127\.0\.0\.1|\[::1\])[:/]/.test(url);
 
   pool = new Pool({
     connectionString: url,
-    ssl: needsSsl ? { rejectUnauthorized: true } : undefined,
+    ssl: isLocal ? undefined : { rejectUnauthorized: true },
     max: 3,
   });
   db = drizzle(pool, { schema });

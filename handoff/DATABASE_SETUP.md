@@ -6,18 +6,31 @@ To make it live you connect a database — this is the one thing that needs your
 account. Nothing here goes in the repo; secrets live in `.env` (local) and the
 Cloudflare dashboard (production).
 
-## 1. Create a Postgres database (Neon recommended)
+## 1. Create a Postgres database
 
-Neon is the smoothest fit for Cloudflare Workers.
+Either provider works — the app uses plain Postgres. Pick one.
 
-1. Sign up at **neon.tech**, create a project (any region near your users).
-2. Copy the **pooled** connection string. It looks like:
+### Option A — Supabase
+
+1. In your Supabase project, go to **Project Settings → Database**.
+2. Under **Connection string**, choose the **Connection pooler** (Supavisor),
+   **Transaction** mode. This is the right one for serverless/Cloudflare Workers.
+   It looks like:
+   `postgresql://postgres.PROJECTREF:PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres`
+3. Add `?sslmode=require` to the end if it isn't already there.
+4. Enable PostGIS (used by the resources map in Phase 8). In the Supabase **SQL
+   Editor** run: `CREATE EXTENSION IF NOT EXISTS postgis;`
+
+### Option B — Neon
+
+1. Sign up at **neon.tech**, create a project.
+2. Copy the **pooled** connection string:
    `postgresql://USER:PASSWORD@ep-xxxx-pooler.REGION.aws.neon.tech/DB?sslmode=require`
-3. Enable PostGIS (used by the resources map in Phase 8). In the Neon SQL editor run:
-   `CREATE EXTENSION IF NOT EXISTS postgis;`
+3. Enable PostGIS in the Neon SQL editor: `CREATE EXTENSION IF NOT EXISTS postgis;`
 
-(Supabase also works; use its connection string. On Workers you may then want
-Cloudflare Hyperdrive in front of it — ask and I'll wire it.)
+The app enables SSL automatically for any non-localhost connection. For higher
+production traffic, Cloudflare **Hyperdrive** can pool connections in front of
+either provider — a drop-in later.
 
 ## 2. Set the environment variables
 
@@ -66,7 +79,7 @@ placeholder.
 
 ## Local development (for developers)
 
-A local Postgres works without Neon:
+A local Postgres works without a managed provider:
 
 ```
 createdb one_breath && psql one_breath -c 'CREATE EXTENSION IF NOT EXISTS postgis;'
@@ -79,7 +92,7 @@ npm run db:migrate && npm run db:seed && npm run dev
 - **Driver:** the app uses `pg` (node-postgres) with its `pg-cloudflare` socket
   shim so the same code runs locally and on the Cloudflare Workers runtime
   (`nodejs_compat`). For higher traffic, Cloudflare Hyperdrive can pool
-  connections in front of Neon — a drop-in later.
+  connections in front of Supabase or Neon — a drop-in later.
 - **Never commit `.env`** or paste a connection string into the repo. `.env` is
   already git-ignored; production secrets live only in the Cloudflare dashboard.
 - Without `DATABASE_URL` the site still builds and deploys; the API returns
