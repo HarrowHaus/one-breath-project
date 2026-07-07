@@ -10,6 +10,17 @@
     "binding": "ASSETS",
     "directory": ".open-next/assets"
   },
+  // Hyperdrive pools connections and handles the socket/TLS to Supabase, which
+  // raw node-postgres on the Workers runtime cannot do reliably. lib/db reads
+  // env.HYPERDRIVE.connectionString when this binding is present.
+  // localConnectionString is used only for local `wrangler`/OpenNext preview.
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "82b56898559940d8ba67de477a284e9e",
+      "localConnectionString": "postgres://obp:obp_dev@localhost:5432/one_breath"
+    }
+  ],
   "observability": {
     "enabled": true
   }
