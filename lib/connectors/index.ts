@@ -251,21 +251,27 @@ async function ingestCdcMeasure(m: (typeof CDC_TRACKING_MEASURES)[number]): Prom
 }
 
 async function runCdcTracking(): Promise<ConnectorResult> {
-  const notes: string[] = [];
-  const all: YearMetricInput[] = [];
-  for (const m of CDC_TRACKING_MEASURES) {
+  const notes: string[] = [
+    "State-by-year counts; suppressed cells dropped. National headline stays the sourced seed (states are not summed).",
+  ];
+  let upserted = 0;
+  // Upsert per measure so a slow run still persists completed measures.
+  for (let i = 0; i < CDC_TRACKING_MEASURES.length; i++) {
+    const m = CDC_TRACKING_MEASURES[i];
+    // Space measures out to stay under the API's unauthenticated rate limit
+    // (a CDC_TRACKING_TOKEN removes the limit entirely).
+    if (i > 0 && !process.env.CDC_TRACKING_TOKEN) {
+      await new Promise((r) => setTimeout(r, 2000));
+    }
     try {
-      const { rows, note } = await ingestCdcMeasure(m);
-      notes.push(note);
-      all.push(...rows);
+      const { rows } = await ingestCdcMeasure(m);
+      const n = await upsertYearMetricsBulk(rows);
+      upserted += n;
+      notes.push(`${m.indicator}: ${n} rows`);
     } catch (err) {
       notes.push(`${m.indicator}: ERROR ${(err as Error).message}`);
     }
   }
-  const upserted = await upsertYearMetricsBulk(all);
-  notes.unshift(
-    "State-by-year counts; suppressed cells dropped. National headline stays the sourced seed (states are not summed).",
-  );
   return { source: CDC_SOURCE, upserted, notes };
 }
 

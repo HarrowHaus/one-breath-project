@@ -5,6 +5,7 @@ import { listMetrics, listStaleResources } from "@/lib/db/queries";
 import {
   loginAction,
   logoutAction,
+  runConnectorAction,
   saveMetricAction,
   saveResourceAction,
   verifyResourceAction,
@@ -28,7 +29,7 @@ const RESOURCE_TYPES = [
 export default async function ManagePage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; saved?: string }>;
+  searchParams: Promise<{ error?: string; saved?: string; ran?: string }>;
 }) {
   const sp = await searchParams;
 
@@ -103,6 +104,13 @@ export default async function ManagePage({
             </div>
           </div>
         )}
+        {sp.ran && (
+          <div className="usa-alert usa-alert--info" role="status">
+            <div className="usa-alert__body">
+              <p className="usa-alert__text">{sp.ran}</p>
+            </div>
+          </div>
+        )}
         {sp.error === "metric" && (
           <div className="usa-alert usa-alert--error" role="alert">
             <div className="usa-alert__body">
@@ -141,6 +149,20 @@ export default async function ManagePage({
             </tbody>
           </table>
         )}
+
+        {/* ---- Data connectors ---- */}
+        <h2>Data connectors</h2>
+        <p className="text-base">
+          Pull the latest figures from their live source. Every row is tagged
+          Measured/Modeled with its source. Safe to re-run — it refreshes rather
+          than duplicates. A run can take up to a minute.
+        </p>
+        <form action={runConnectorAction} className="usa-form">
+          <input type="hidden" name="connector" value="cdc-tracking" />
+          <button className="usa-button" type="submit">
+            Run CDC Tracking (deaths, ER visits, hospitalizations by state &amp; year)
+          </button>
+        </form>
 
         {/* ---- Add / update a figure ---- */}
         <h2>Add or update a figure</h2>

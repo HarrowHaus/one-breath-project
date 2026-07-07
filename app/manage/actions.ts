@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { clearSession, isAuthed, setSession, verifyPassword } from "@/lib/auth";
+import { CONNECTORS, NotConfiguredError } from "@/lib/connectors";
 import {
   insertResource,
   upsertLatestMetric,
@@ -80,6 +81,31 @@ export async function saveResourceAction(formData: FormData): Promise<void> {
   });
   revalidatePath("/manage");
   redirect("/manage?saved=resource");
+}
+
+// Run a data connector on demand from the admin (Phase 2B: "show me the
+// imported data in the admin"). Idempotent — safe to re-run; a slow run that
+// times out can just be clicked again. The outcome summary is passed back via
+// the ?ran query so the page can show what happened.
+export async function runConnectorAction(formData: FormData): Promise<void> {
+  await requireAuth();
+  const name = str(formData.get("connector"));
+  const connector = CONNECTORS[name];
+  if (!connector) redirect("/manage?error=connector");
+
+  let summary: string;
+  try {
+    const result = await connector.run();
+    summary = `${name}: ${result.upserted} rows saved — ${result.notes.join(" | ")}`;
+  } catch (err) {
+    summary =
+      err instanceof NotConfiguredError
+        ? `${name}: did not run — ${err.message}`
+        : `${name}: failed — ${(err as Error).message}`;
+  }
+  revalidatePath("/manage");
+  revalidatePath("/data");
+  redirect(`/manage?ran=${encodeURIComponent(summary.slice(0, 800))}`);
 }
 
 export async function verifyResourceAction(formData: FormData): Promise<void> {
