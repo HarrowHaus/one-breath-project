@@ -19,16 +19,25 @@ export async function GET(request: Request) {
     );
   }
 
-  const result = await getMetric({
-    indicator,
-    geo: searchParams.get("geo") ?? undefined,
-    year: searchParams.get("year") ?? undefined,
-  });
+  try {
+    const result = await getMetric({
+      indicator,
+      geo: searchParams.get("geo") ?? undefined,
+      year: searchParams.get("year") ?? undefined,
+    });
 
-  // Cache at the edge; a missing figure is a normal 200 (the site hides the line).
-  return NextResponse.json(result, {
-    headers: {
-      "Cache-Control": "public, s-maxage=300, stale-while-revalidate=86400",
-    },
-  });
+    // Cache at the edge; a missing figure is a normal 200 (the site hides the line).
+    return NextResponse.json(result, {
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=86400",
+      },
+    });
+  } catch (err: unknown) {
+    // Surface the real DB error (temporary, for bring-up diagnosis).
+    const e = err as { name?: string; code?: string; message?: string };
+    return NextResponse.json(
+      { found: false, error: e?.message, name: e?.name, code: e?.code },
+      { status: 500 },
+    );
+  }
 }
