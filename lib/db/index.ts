@@ -56,10 +56,23 @@ export function getDb(): DB | null {
   // opens a fresh connection.
   pool.on("error", (err) => {
     console.error("pg pool error:", err?.message);
+    // A poisoned pool would otherwise stay cached for the isolate's life; drop
+    // it so the next getDb() rebuilds a healthy one.
+    resetDb();
   });
 
   db = drizzle(pool, { schema });
   return db;
+}
+
+// Drop the cached pool/client after a connection failure. The next getDb()
+// rebuilds from scratch, so one bad connection can't wedge the whole isolate.
+export function resetDb(): void {
+  const stale = pool;
+  pool = undefined;
+  db = undefined;
+  // End on the next tick; ignore errors (the pool is already known-bad).
+  void stale?.end().catch(() => {});
 }
 
 export { schema };

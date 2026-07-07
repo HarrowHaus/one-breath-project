@@ -1,6 +1,15 @@
 import { and, desc, eq, lt, or, isNull, sql } from "drizzle-orm";
-import { getDb } from "./index";
+import { getDb, resetDb } from "./index";
 import { metrics, resources } from "./schema";
+
+// A transient DB failure (e.g. a dropped Hyperdrive/Supabase connection) must
+// never crash a page render (Cloudflare error 1101). Read-path queries route
+// their DB errors through here: log, drop the poisoned pool, and let the caller
+// fall back to its empty/"no data" state so the site hides that line instead.
+function onReadError(where: string, err: unknown): void {
+  console.error(`db read failed (${where}):`, err instanceof Error ? err.message : err);
+  resetDb();
+}
 
 // Shape the internal API returns for a single figure. `found: false` means the
 // site hides that line — never a placeholder number (honesty non-negotiable).
@@ -31,47 +40,53 @@ export async function getMetric(params: {
   const geo = params.geo?.trim() || "US";
   const yearRaw = params.year?.trim() || "latest";
 
-  const whereLatest = and(
-    eq(metrics.indicator, params.indicator),
-    eq(metrics.geoId, geo),
-    eq(metrics.isLatest, true),
-  );
+  try {
+    const whereLatest = and(
+      eq(metrics.indicator, params.indicator),
+      eq(metrics.geoId, geo),
+      eq(metrics.isLatest, true),
+    );
 
-  let row;
-  if (yearRaw === "latest") {
-    [row] = await db.select().from(metrics).where(whereLatest).limit(1);
-  } else {
-    const year = Number.parseInt(yearRaw, 10);
-    if (Number.isNaN(year)) return { found: false };
-    [row] = await db
-      .select()
-      .from(metrics)
-      .where(
-        and(
-          eq(metrics.indicator, params.indicator),
-          eq(metrics.geoId, geo),
-          eq(metrics.year, year),
-        ),
-      )
-      .orderBy(desc(metrics.updatedAt))
-      .limit(1);
+    let row;
+    if (yearRaw === "latest") {
+      [row] = await db.select().from(metrics).where(whereLatest).limit(1);
+    } else {
+      const year = Number.parseInt(yearRaw, 10);
+      if (Number.isNaN(year)) return { found: false };
+      [row] = await db
+        .select()
+        .from(metrics)
+        .where(
+          and(
+            eq(metrics.indicator, params.indicator),
+            eq(metrics.geoId, geo),
+            eq(metrics.year, year),
+          ),
+        )
+        .orderBy(desc(metrics.updatedAt))
+        .limit(1);
+    }
+
+    if (!row) return { found: false };
+
+    return {
+      found: true,
+      indicator: row.indicator,
+      geo: row.geoId,
+      year: row.year,
+      value: row.valueDisplay,
+      valueNumeric: row.valueNumeric,
+      tag: row.measuredOrModeled,
+      source: row.source,
+      ciLow: row.ciLow,
+      ciHigh: row.ciHigh,
+      retrievedAt: row.retrievedAt.toISOString(),
+    };
+  } catch (err) {
+    // Transient DB failure → hide the figure, don't crash the page.
+    onReadError(`getMetric ${params.indicator}/${geo}/${yearRaw}`, err);
+    return { found: false };
   }
-
-  if (!row) return { found: false };
-
-  return {
-    found: true,
-    indicator: row.indicator,
-    geo: row.geoId,
-    year: row.year,
-    value: row.valueDisplay,
-    valueNumeric: row.valueNumeric,
-    tag: row.measuredOrModeled,
-    source: row.source,
-    ciLow: row.ciLow,
-    ciHigh: row.ciHigh,
-    retrievedAt: row.retrievedAt.toISOString(),
-  };
 }
 
 export type ResourceRow = {
@@ -99,25 +114,30 @@ export async function listResources(params: {
   if (params.type) conditions.push(eq(resources.type, params.type));
   if (params.geo) conditions.push(eq(resources.geoId, params.geo));
 
-  const rows = await db
-    .select()
-    .from(resources)
-    .where(conditions.length ? and(...conditions) : undefined)
-    .limit(500);
+  try {
+    const rows = await db
+      .select()
+      .from(resources)
+      .where(conditions.length ? and(...conditions) : undefined)
+      .limit(500);
 
-  return rows.map((r) => ({
-    id: r.id,
-    type: r.type,
-    name: r.name,
-    geo: r.geoId,
-    lat: r.lat,
-    lng: r.lng,
-    phone: r.phone,
-    url: r.url,
-    notes: r.notes,
-    source: r.source,
-    verifiedAt: r.verifiedAt ? r.verifiedAt.toISOString() : null,
-  }));
+    return rows.map((r) => ({
+      id: r.id,
+      type: r.type,
+      name: r.name,
+      geo: r.geoId,
+      lat: r.lat,
+      lng: r.lng,
+      phone: r.phone,
+      url: r.url,
+      notes: r.notes,
+      source: r.source,
+      verifiedAt: r.verifiedAt ? r.verifiedAt.toISOString() : null,
+    }));
+  } catch (err) {
+    onReadError("listResources", err);
+    return [];
+  }
 }
 
 // Resources whose verification is older than `months` (or never verified) —
@@ -129,25 +149,30 @@ export async function listStaleResources(months = 6): Promise<ResourceRow[]> {
   const cutoff = new Date();
   cutoff.setMonth(cutoff.getMonth() - months);
 
-  const rows = await db
-    .select()
-    .from(resources)
-    .where(or(isNull(resources.verifiedAt), lt(resources.verifiedAt, cutoff)))
-    .limit(500);
+  try {
+    const rows = await db
+      .select()
+      .from(resources)
+      .where(or(isNull(resources.verifiedAt), lt(resources.verifiedAt, cutoff)))
+      .limit(500);
 
-  return rows.map((r) => ({
-    id: r.id,
-    type: r.type,
-    name: r.name,
-    geo: r.geoId,
-    lat: r.lat,
-    lng: r.lng,
-    phone: r.phone,
-    url: r.url,
-    notes: r.notes,
-    source: r.source,
-    verifiedAt: r.verifiedAt ? r.verifiedAt.toISOString() : null,
-  }));
+    return rows.map((r) => ({
+      id: r.id,
+      type: r.type,
+      name: r.name,
+      geo: r.geoId,
+      lat: r.lat,
+      lng: r.lng,
+      phone: r.phone,
+      url: r.url,
+      notes: r.notes,
+      source: r.source,
+      verifiedAt: r.verifiedAt ? r.verifiedAt.toISOString() : null,
+    }));
+  } catch (err) {
+    onReadError("listStaleResources", err);
+    return [];
+  }
 }
 
 // ---- Admin mutations (guarded by the /manage password) ----
@@ -168,18 +193,23 @@ export async function listMetrics(): Promise<
 > {
   const db = getDb();
   if (!db) return [];
-  const rows = await db.select().from(metrics).orderBy(metrics.indicator, desc(metrics.updatedAt));
-  return rows.map((r) => ({
-    id: r.id,
-    indicator: r.indicator,
-    geo: r.geoId,
-    year: r.year,
-    isLatest: r.isLatest,
-    value: r.valueDisplay,
-    tag: r.measuredOrModeled,
-    source: r.source,
-    updatedAt: r.updatedAt.toISOString(),
-  }));
+  try {
+    const rows = await db.select().from(metrics).orderBy(metrics.indicator, desc(metrics.updatedAt));
+    return rows.map((r) => ({
+      id: r.id,
+      indicator: r.indicator,
+      geo: r.geoId,
+      year: r.year,
+      isLatest: r.isLatest,
+      value: r.valueDisplay,
+      tag: r.measuredOrModeled,
+      source: r.source,
+      updatedAt: r.updatedAt.toISOString(),
+    }));
+  } catch (err) {
+    onReadError("listMetrics", err);
+    return [];
+  }
 }
 
 export type MetricInput = {
