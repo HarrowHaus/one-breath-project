@@ -29,6 +29,7 @@ If a page needs copy that isn't in `/content`, **stop and ask** — do not write
 - Invoke `git-committer` **only after** a task or phase completes successfully and the build passes. Never commit broken or half-finished work.
 - The sub-agent pushes **directly to `main`**. **Never open a pull request. Never create feature branches.** Push to `main` only, and only on success.
 - If the build fails or the work is incomplete, do NOT invoke the sub-agent — fix first, then commit.
+- **Environment note:** Claude Code on the web gates pushes to `main`. This repo allows them via a Bash permission rule in `.claude/settings.json` (`Bash(git push origin main)`), so the push-to-`main` flow above works without a per-push prompt. If a hosted session ever still blocks the push, approve it when asked — do **not** switch to a pull-request flow.
 
 ## Stack (summary — full detail in /docs/00_MASTER_CONTEXT.md)
 Next.js (React) + U.S. Web Design System (USWDS) + Public Sans. Deploy: **Cloudflare Pages** from GitHub `main`. Data: Postgres + PostGIS (external, e.g. Neon/Supabase) behind a single **internal cached API** that the site reads from — the site never calls government APIs directly at page load. Charts: custom explorer (Observable Plot or visx) + Datawrapper embeds. Maps: MapLibre GL. Content: Git-based CMS (e.g. Decap). Search: Pagefind. Analytics: privacy-first.
