@@ -1,0 +1,17 @@
+// USWDS settings overrides. Kept minimal for Phase 0 — the full design-token
+// pass (colors, type scale, spacing from /docs/06_DESIGN_SPEC.md) is Phase 1.
+//
+// Font/image paths are relative to the compiled CSS at /uswds/css/styles.css,
+// so "../fonts" and "../img" resolve to the vendored /uswds/fonts and /uswds/img.
+@use "uswds-core" with (
+  $theme-image-path: "../img",
+  $theme-font-path: "../fonts",
+
+  // Public Sans is the base font (design spec). Setting the sans typeface here
+  // makes USWDS bundle only the Public Sans @font-face set for body text.
+  $theme-font-type-sans: "public-sans",
+
+  // Keep the compile quiet in CI.
+  $theme-show-compile-warnings: false,
+  $theme-show-notifications: false
+);

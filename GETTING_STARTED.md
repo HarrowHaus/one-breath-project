@@ -7,10 +7,10 @@ You don't need to code. You create a few free accounts, upload this folder, and 
 2. Make a new repository (name it `one-breath-project`, keep it private for now).
 3. Upload the contents of this folder to it. (In the GitHub web uploader, drag the files in; or in Claude Code, tell it: "Push this project to my GitHub repo `[your-repo-URL]` on the `main` branch.")
 
-## Step 2 — Connect Cloudflare Pages
+## Step 2 — Connect Cloudflare
 1. Create a free account at cloudflare.com.
-2. In the dashboard: **Workers & Pages → Create → Pages → Connect to Git**, and pick your `one-breath-project` repo.
-3. You don't need to know the build settings — Phase 0 has Claude Code set them and tell you exactly what to enter. For now, just connect the repo.
+2. Connect the repo through **Workers Builds** (Cloudflare's current Next.js path — the old Pages adapter is deprecated). The exact click-by-click, build commands, and where your live URL appears are in **`handoff/CLOUDFLARE_DEPLOY.md`**.
+3. You don't need to know the build settings — Phase 0 wired them into the repo, and the deploy doc tells you exactly what to enter. For now, just connect the repo.
 
 ## Step 3 — Open Claude Code on this repo
 - Desktop (Windows) or the mobile app, pointed at the GitHub repo.

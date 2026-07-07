@@ -1,0 +1,38 @@
+{
+  "name": "one-breath-project",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The One Breath Project — independent nonprofit carbon-monoxide safety, education, and advocacy site.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "build:css": "sass styles/uswds/styles.scss public/uswds/css/styles.css --load-path=node_modules/@uswds/uswds/packages --style=compressed --quiet-deps --no-source-map",
+    "sync:uswds": "node scripts/sync-uswds.mjs && npm run build:css",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "test:a11y": "playwright test"
+  },
+  "dependencies": {
+    "@uswds/uswds": "^3.13.0",
+    "next": "^16.2.10",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
+    "@eslint/eslintrc": "^3.3.1",
+    "@opennextjs/cloudflare": "^1.20.1",
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "eslint": "^9.18.0",
+    "eslint-config-next": "^16.2.10",
+    "sass": "^1.101.0",
+    "typescript": "^5.7.3",
+    "wrangler": "^4.107.0"
+  }
+}

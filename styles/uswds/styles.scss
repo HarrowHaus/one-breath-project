@@ -1,0 +1,6 @@
+// USWDS entry point. Compiled by `npm run build:css` to
+// public/uswds/css/styles.css (committed/vendored so the deploy build needs no
+// Sass step). Phase 1 expands the theme; Phase 0 only sets Public Sans + paths.
+@forward "uswds-theme";
+@forward "uswds";
+@forward "uswds-theme-custom-styles";

@@ -8,9 +8,16 @@ node_modules/
 out/
 next-env.d.ts
 
-# Cloudflare
+# Cloudflare / OpenNext
 .wrangler/
 .dev.vars
+.open-next/
+cloudflare-env.d.ts
+
+# Playwright (accessibility gate) artifacts
+test-results/
+playwright-report/
+.playwright/
 
 # Environment / secrets (NEVER commit these)
 .env

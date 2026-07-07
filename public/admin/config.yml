@@ -1,0 +1,34 @@
+# Decap CMS configuration — Phase 0: configured but empty.
+#
+# The backend and one empty "Pages" collection are wired so non-developers can
+# edit content through /admin in a later phase. No content is authored here yet,
+# and the site's existing copy in /content is NOT managed by the CMS until a
+# dedicated content-modeling phase maps each page's fields.
+#
+# Auth: the GitHub backend needs an OAuth provider (e.g. a small Cloudflare
+# Worker or Netlify) before /admin can log in in production. For local editing,
+# run `npx decap-server` and open /admin — `local_backend` routes writes to disk.
+
+backend:
+  name: github
+  repo: HarrowHaus/one-breath-project
+  branch: main
+
+# Lets editors work locally without GitHub auth: `npx decap-server`.
+local_backend: true
+
+# Where uploaded media is stored / served from.
+media_folder: "public/uploads"
+public_folder: "/uploads"
+
+# Empty scaffold collection. Editors can add pages here later; the folder starts
+# empty (see content/pages/.gitkeep). Real content modeling comes in a later phase.
+collections:
+  - name: "pages"
+    label: "Pages"
+    folder: "content/pages"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Body", name: "body", widget: "markdown" }

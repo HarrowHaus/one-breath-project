@@ -1,0 +1,89 @@
+/*
+ * Phase 0 base styles. Deliberately light — Phase 1 builds the real design
+ * system as USWDS Sass tokens. These rules only:
+ *  - nudge the senior-legible defaults from /docs/06_DESIGN_SPEC.md
+ *    (18px body, 1.6 line height, ~70ch measure, always-visible focus), and
+ *  - style the scaffolding header/footer that aren't USWDS components.
+ * All colors are drawn from the design-spec palette; none are invented.
+ */
+
+:root {
+  --obp-primary: #1a4480;
+  --obp-primary-dark: #162e51;
+  --obp-accent: #d54309; /* ember — used only as an accent rule, never body text */
+  --obp-ink: #1b1b1b;
+  --obp-ink-secondary: #565c65;
+  --obp-tint: #f0f0f0;
+}
+
+/* Senior-legible body defaults. */
+body {
+  font-size: 1.125rem; /* 18px */
+  line-height: 1.6;
+  color: var(--obp-ink);
+}
+
+/* Cap the reading measure for long-form text (~70–75 characters). */
+main p {
+  max-width: 68ch;
+}
+
+/* Never remove focus outlines; keep a high-contrast, visible ring everywhere. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 4px solid var(--obp-primary);
+  outline-offset: 2px;
+}
+
+/* Scaffolding header */
+.site-header {
+  border-bottom: 4px solid var(--obp-primary);
+  padding: 1.25rem 0;
+  background: #ffffff;
+}
+
+.site-wordmark {
+  display: inline-flex;
+  flex-direction: column;
+  text-decoration: none;
+  line-height: 1.2;
+}
+
+.site-wordmark__name {
+  color: var(--obp-primary);
+  font-weight: 600;
+  font-size: 1.5rem;
+}
+
+.site-wordmark__tagline {
+  color: var(--obp-ink-secondary);
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+}
+
+.build-status {
+  color: var(--obp-ink-secondary);
+}
+
+/* Scaffolding footer */
+.site-footer {
+  margin-top: 3rem;
+  padding: 2rem 0;
+  background: var(--obp-tint);
+  color: var(--obp-ink);
+}
+
+.site-footer__disclaimer {
+  max-width: 68ch;
+}
+
+/* Ember accent as a rule, not as body-text color (keeps AA contrast). */
+.site-footer__emergency {
+  max-width: 68ch;
+  margin-top: 1rem;
+  padding-left: 0.75rem;
+  border-left: 4px solid var(--obp-accent);
+  font-weight: 600;
+}
