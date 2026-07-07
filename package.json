@@ -16,6 +16,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "node scripts/seed.mjs",
+    "import:usfa": "node scripts/import-usfa.mjs",
     "test:a11y": "playwright test"
   },
   "dependencies": {
@@ -36,6 +37,7 @@
     "@types/pg": "^8.20.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "csv-parse": "^7.0.1",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9.18.0",
     "eslint-config-next": "^16.2.10",
