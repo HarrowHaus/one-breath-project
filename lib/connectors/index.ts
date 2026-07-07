@@ -7,7 +7,7 @@
 // must be confirmed against each source's CURRENT official API before the
 // connector will emit data. Connectors that aren't fully configured throw a
 // clear "not configured" error rather than invent numbers.
-import { upsertYearMetric } from "@/lib/db/queries";
+import { upsertYearMetric, upsertYearMetricsBulk, type YearMetricInput } from "@/lib/db/queries";
 
 export type ConnectorResult = {
   source: string;
@@ -82,42 +82,210 @@ async function runAirNow(): Promise<ConnectorResult> {
 
 // ---------------------------------------------------------------------------
 // CDC Environmental Public Health Tracking Network — unintentional CO ED visits,
-// hospitalizations, and mortality by geography/year. The REST API keys off
-// numeric measure IDs; set the real ones (from the Tracking API measures list)
-// in CDC_TRACKING_MEASURES before enabling. Left unset on purpose so the
-// connector cannot emit unverified figures.
+// hospitalizations, and mortality by state and year.
+//
+// Verified live (2026-07) against the Tracking Network Data API: content area 2
+// ("Unintentional Carbon Monoxide (CO) Poisoning"), the three annual-COUNT
+// measures below, resolved through the documented call chain used by CDC's own
+// EPHTrackR package: geographicTypes → stratificationlevel → temporalItems →
+// geographicItems → POST getCoreHolder. Suppressed cells (CDC privacy rules) are
+// dropped, never guessed. Every figure is tagged Measured with its source and
+// year. National totals are NOT summed from states (some states are suppressed,
+// so a sum would understate) — the national headline stays the sourced seed.
 // ---------------------------------------------------------------------------
-const CDC_TRACKING_MEASURES: Record<string, { measureId: number; tag: string }> = {
-  // indicator            → { measureId: <VERIFY from CDC Tracking>, tag }
-  // co_er_visits:        { measureId: 0, tag: "Modeled" },
-  // co_hospitalizations: { measureId: 0, tag: "Measured" },
-  // co_deaths:           { measureId: 0, tag: "Measured" },
+const CDC_API = "https://ephtracking.cdc.gov/apigateway/api/v1";
+const CDC_SOURCE = "CDC Environmental Public Health Tracking Network";
+
+const CDC_TRACKING_MEASURES: Array<{
+  measureId: number;
+  indicator: string;
+  tag: string;
+  note: string;
+}> = [
+  {
+    measureId: 117,
+    indicator: "co_hospitalizations",
+    tag: "Measured",
+    note: "Annual number of hospitalizations for unintentional CO poisoning (CDC Tracking).",
+  },
+  {
+    measureId: 120,
+    indicator: "co_er_visits",
+    tag: "Measured",
+    note: "Annual number of emergency department visits for unintentional CO poisoning (CDC Tracking).",
+  },
+  {
+    measureId: 573,
+    indicator: "co_deaths",
+    tag: "Measured",
+    note: "Average annual number of deaths from unintentional CO poisoning over a 5-year period (CDC Tracking).",
+  },
+];
+
+// The Tracking API returns HTTP 200 even for errors, carrying a { code, message }
+// envelope; and it throttles unauthenticated bursts (429). Detect both, and back
+// off briefly on 429. An optional CDC_TRACKING_TOKEN lifts the rate limit.
+async function cdcApi<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = process.env.CDC_TRACKING_TOKEN;
+  const sep = path.includes("?") ? "&" : "?";
+  const url = `${CDC_API}/${path}${token ? `${sep}apiToken=${token}` : ""}`;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const res = await fetch(url, {
+      ...init,
+      headers: { Accept: "application/json", ...(init?.headers ?? {}) },
+    });
+    const data = (await res.json()) as unknown;
+    const code =
+      data && typeof data === "object" && "code" in data
+        ? (data as { code?: number }).code
+        : undefined;
+    if (code === 429) {
+      await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+      continue;
+    }
+    if (!res.ok || (code != null && code >= 400)) {
+      const msg =
+        data && typeof data === "object" && "message" in data
+          ? (data as { message?: string }).message
+          : `HTTP ${res.status}`;
+      throw new Error(`CDC ${path} → ${code ?? res.status} ${msg ?? ""}`.trim());
+    }
+    return data as T;
+  }
+  throw new Error(`CDC ${path} → rate limited after retries (set CDC_TRACKING_TOKEN)`);
+}
+
+type CdcGeoType = { geographicTypeId: number; geographicType: string };
+type CdcStrat = { id: number; abbreviation?: string; stratificationType?: unknown[] };
+type CdcTemporal = { temporal?: string | number; temporalTypeId?: number };
+type CdcGeoItem = { id?: number | string };
+type CdcRow = {
+  geo?: string;
+  geoId?: string;
+  title?: string;
+  temporal?: string;
+  dataValue?: string | number;
+  displayValue?: string;
+  suppressionFlag?: string;
+  noDataId?: number;
+  confidenceIntervalLow?: number | null;
+  confidenceIntervalHigh?: number | null;
 };
 
-async function runCdcTracking(): Promise<ConnectorResult> {
-  if (Object.keys(CDC_TRACKING_MEASURES).length === 0) {
-    throw new NotConfiguredError(
-      "CDC Tracking measure IDs are not set. Populate CDC_TRACKING_MEASURES from the " +
-        "current CDC Tracking API measures list, then redeploy. (Endpoints/IDs must be " +
-        "verified live; this sandbox cannot reach ephtracking.cdc.gov.)",
+// Pull the last 4-digit year from a temporal label (handles single years like
+// "2019" and 5-year period labels for the mortality measure).
+function parseYear(temporal: string | undefined): number | null {
+  const m = String(temporal ?? "").match(/(\d{4})(?!.*\d{4})/);
+  return m ? Number(m[1]) : null;
+}
+
+async function ingestCdcMeasure(m: (typeof CDC_TRACKING_MEASURES)[number]): Promise<{
+  rows: YearMetricInput[];
+  note: string;
+}> {
+  const geoTypes = await cdcApi<CdcGeoType[]>(`geographicTypes/${m.measureId}`);
+  const rows: YearMetricInput[] = [];
+
+  for (const gt of geoTypes) {
+    const name = (gt.geographicType ?? "").toLowerCase();
+    // State and national only — skip county to avoid volume + heavy suppression.
+    const level = name === "state" ? "state" : name === "national" || name === "us" ? "nation" : null;
+    if (!level) continue;
+    const geoTypeId = gt.geographicTypeId;
+
+    const strats = await cdcApi<CdcStrat[]>(`stratificationlevel/${m.measureId}/${geoTypeId}/0`);
+    // The base level has no advanced stratification (no age/sex/cause split).
+    const base = strats.find((s) => (s.stratificationType?.length ?? 0) === 0) ?? strats[0];
+    if (!base) continue;
+
+    const temporal = await cdcApi<CdcTemporal[]>(`temporalItems/${m.measureId}/${geoTypeId}/ALL/ALL`);
+    const years = [...new Set(temporal.map((t) => String(t.temporal)).filter((y) => y && y !== "undefined"))];
+    const temporalTypeId = String(temporal[0]?.temporalTypeId ?? 1);
+    if (years.length === 0) continue;
+
+    const geoItems = await cdcApi<CdcGeoItem[]>(`geographicItems/${m.measureId}/${geoTypeId}/0`);
+    const geoIds = [...new Set(geoItems.map((g) => String(g.id)).filter((v) => v && v !== "null"))];
+    if (geoIds.length === 0) continue;
+
+    const core = await cdcApi<{ tableResult?: CdcRow[] }>(
+      `getCoreHolder/${m.measureId}/${base.id}/0/0`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          geographicTypeIdFilter: String(geoTypeId),
+          geographicItemsFilter: geoIds.join(","),
+          temporalTypeIdFilter: temporalTypeId,
+          temporalItemsFilter: years.join(","),
+        }),
+      },
     );
+
+    for (const r of core.tableResult ?? []) {
+      if (r.suppressionFlag && r.suppressionFlag !== "0") continue; // CDC-suppressed
+      if (r.noDataId != null && r.noDataId !== -1) continue; // no data
+      const value = Number(r.dataValue);
+      if (!Number.isFinite(value)) continue;
+      const year = parseYear(r.temporal);
+      if (year == null) continue;
+      const geo = level === "nation" ? "US" : r.geo || r.title;
+      if (!geo) continue;
+      const ciLow = r.confidenceIntervalLow != null ? Number(r.confidenceIntervalLow) : null;
+      const ciHigh = r.confidenceIntervalHigh != null ? Number(r.confidenceIntervalHigh) : null;
+      rows.push({
+        indicator: m.indicator,
+        geo,
+        geoLevel: level,
+        year,
+        valueNumeric: value,
+        valueDisplay: r.displayValue ?? String(value),
+        ciLow: Number.isFinite(ciLow as number) ? ciLow : null,
+        ciHigh: Number.isFinite(ciHigh as number) ? ciHigh : null,
+        source: CDC_SOURCE,
+        measuredOrModeled: m.tag,
+        notes: m.note,
+      });
+    }
   }
-  // Request shape (verify against current docs):
-  //   GET https://ephtracking.cdc.gov/apigateway/api/v1/getCoreHolder/{measureId}/{stratLevel}/{geoType}/{geoItems}/{temporalItems}/...
-  // Normalize each returned datum → upsertYearMetric({ indicator, geo, year,
-  //   valueNumeric, ciLow, ciHigh, source: "CDC Environmental Public Health Tracking Network", tag }).
-  throw new NotConfiguredError("CDC Tracking request shape pending live verification.");
+  return { rows, note: `${m.indicator}: ${rows.length} rows` };
+}
+
+async function runCdcTracking(): Promise<ConnectorResult> {
+  const notes: string[] = [];
+  const all: YearMetricInput[] = [];
+  for (const m of CDC_TRACKING_MEASURES) {
+    try {
+      const { rows, note } = await ingestCdcMeasure(m);
+      notes.push(note);
+      all.push(...rows);
+    } catch (err) {
+      notes.push(`${m.indicator}: ERROR ${(err as Error).message}`);
+    }
+  }
+  const upserted = await upsertYearMetricsBulk(all);
+  notes.unshift(
+    "State-by-year counts; suppressed cells dropped. National headline stays the sourced seed (states are not summed).",
+  );
+  return { source: CDC_SOURCE, upserted, notes };
 }
 
 // ---------------------------------------------------------------------------
-// CPSC NEISS — national ER injury estimates for CO, with confidence intervals.
-// Set the query params (product/diagnosis codes, endpoint) from the current
-// NEISS/CPSC open-data API before enabling.
+// CPSC NEISS — national ER injury estimates for CO.
+//
+// Verified 2026-07: `api.cpsc.gov` does not resolve (no DNS) — there is no public
+// JSON API for NEISS national CO estimates. NEISS national figures are published
+// as reports / annual sample files that require the survey weights to reproduce,
+// so they can't be fetched live without fabricating a number. Per the No-API
+// doctrine (docs/05): emergency-department visits are ingested per state from CDC
+// Tracking (measure 120) instead, and the national Modeled "over 100,000" estimate
+// is maintained as a sourced seed/CSV figure. This connector intentionally does
+// not run rather than emit an unverified number.
 // ---------------------------------------------------------------------------
 async function runNeiss(): Promise<ConnectorResult> {
   throw new NotConfiguredError(
-    "NEISS query params (endpoint, CO diagnosis code) pending live verification against " +
-      "the current api.cpsc.gov docs. National ER figures are Modeled; store ci_low/ci_high.",
+    "NEISS has no public JSON API (api.cpsc.gov does not resolve, verified 2026-07). " +
+      "Emergency-department visits are ingested from CDC Tracking (measure 120); the national " +
+      "Modeled estimate is maintained via seed/CSV. Nothing to fetch — this connector does not run.",
   );
 }
 

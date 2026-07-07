@@ -410,3 +410,55 @@ export async function upsertYearMetric(input: YearMetricInput): Promise<void> {
       },
     });
 }
+
+// Bulk version of upsertYearMetric for connectors that ingest thousands of
+// state-by-year rows in one run (per-row round-trips are too slow on Workers).
+// Idempotent on indicator+geo+year via the same partial unique index; on
+// conflict each row refreshes from its own EXCLUDED values. Chunked to keep
+// individual statements within parameter limits. Returns rows written.
+export async function upsertYearMetricsBulk(rows: YearMetricInput[]): Promise<number> {
+  const db = getDb();
+  if (!db) throw new Error("Database is not configured.");
+  if (rows.length === 0) return 0;
+
+  const CHUNK = 200;
+  let written = 0;
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const slice = rows.slice(i, i + CHUNK);
+    await db
+      .insert(metrics)
+      .values(
+        slice.map((input) => ({
+          indicator: input.indicator,
+          geoId: input.geo,
+          geoLevel: input.geoLevel ?? (input.geo === "US" ? "nation" : "state"),
+          year: input.year,
+          isLatest: false,
+          valueDisplay: input.valueDisplay ?? null,
+          valueNumeric: input.valueNumeric ?? null,
+          ciLow: input.ciLow ?? null,
+          ciHigh: input.ciHigh ?? null,
+          source: input.source,
+          measuredOrModeled: input.measuredOrModeled,
+          notes: input.notes ?? null,
+        })),
+      )
+      .onConflictDoUpdate({
+        target: [metrics.indicator, metrics.geoId, metrics.year],
+        targetWhere: sql`${metrics.year} is not null`,
+        set: {
+          valueDisplay: sql`excluded.value_display`,
+          valueNumeric: sql`excluded.value_numeric`,
+          ciLow: sql`excluded.ci_low`,
+          ciHigh: sql`excluded.ci_high`,
+          source: sql`excluded.source`,
+          measuredOrModeled: sql`excluded.measured_or_modeled`,
+          notes: sql`excluded.notes`,
+          retrievedAt: sql`now()`,
+          updatedAt: sql`now()`,
+        },
+      });
+    written += slice.length;
+  }
+  return written;
+}
