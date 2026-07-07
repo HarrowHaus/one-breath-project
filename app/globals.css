@@ -275,6 +275,107 @@ input:focus-visible,
   margin-top: 0.35rem;
 }
 
+/* ============================================================
+ * Phase 6 — Data explorer
+ * ============================================================ */
+.obp-explorer {
+  margin: 2rem 0;
+  border: 1px solid #dfe1e2;
+  border-radius: 0.25rem;
+  padding: 1.5rem;
+}
+.obp-explorer__step {
+  padding: 1rem 0;
+  border-bottom: 1px solid #eee;
+}
+.obp-explorer__step-title {
+  margin: 0 0 0.75rem;
+  color: var(--obp-primary-dark);
+  font-size: 1.15rem;
+}
+.obp-explorer__hint,
+.obp-explorer__def {
+  color: var(--obp-ink-secondary);
+  margin: 0.75rem 0 0;
+}
+.obp-explorer__def {
+  font-size: 1.06rem;
+}
+
+/* Metric chips — one measure at a time (single-select). */
+.obp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.obp-chip {
+  appearance: none;
+  cursor: pointer;
+  border: 2px solid var(--obp-primary);
+  background: #fff;
+  color: var(--obp-primary);
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+}
+.obp-chip:hover {
+  background: var(--obp-tint);
+}
+.obp-chip[aria-pressed="true"] {
+  background: var(--obp-primary);
+  color: #fff;
+}
+
+/* Result block */
+.obp-explorer__result {
+  padding-top: 1.5rem;
+}
+.obp-explorer__sentence {
+  font-size: 1.35rem;
+  line-height: 1.5;
+  margin: 1rem 0;
+}
+
+/* Chart */
+.obp-chart {
+  margin: 0 0 1rem;
+}
+.obp-chart__svg {
+  width: 100%;
+  height: auto;
+  max-height: 320px;
+}
+.obp-chart__axis {
+  stroke: #a9aeb1;
+  stroke-width: 1;
+}
+.obp-chart__bar {
+  fill: var(--obp-primary);
+}
+.obp-chart__value {
+  fill: var(--obp-ink);
+  font-size: 16px;
+  font-weight: 700;
+}
+.obp-chart__label {
+  fill: var(--obp-ink-secondary);
+  font-size: 15px;
+}
+
+/* Visually-hidden helper (matches USWDS sr-only intent). */
+.usa-sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ---- Landing scale band ---- */
 .obp-section-tint {
   background: var(--obp-tint);

@@ -89,6 +89,72 @@ export async function getMetric(params: {
   }
 }
 
+// ---- Data explorer (Phase 6) ----
+
+// A place we actually hold data for. The explorer offers ONLY these in its
+// "Where" control — we never present a place we can't source a number for.
+export type GeoOption = { geoId: string; geoLevel: string };
+
+// One point in a metric's time series for a place. valueNumeric powers the
+// chart/axis; valueDisplay is the natural-language phrasing; tag/source carry
+// the honesty metadata onto every point.
+export type SeriesPoint = {
+  year: number | null;
+  valueNumeric: number | null;
+  valueDisplay: string | null;
+  tag: string;
+  source: string;
+  isLatest: boolean;
+};
+
+// Distinct places present in the metrics table (deduped). Right now that's just
+// the national row; as the CDC/NEISS connectors ingest state/county rows they
+// appear here automatically and the explorer's "Where" control grows with them.
+export async function listMetricGeos(): Promise<GeoOption[]> {
+  const db = getDb();
+  if (!db) return [];
+  try {
+    const rows = await db
+      .selectDistinct({ geoId: metrics.geoId, geoLevel: metrics.geoLevel })
+      .from(metrics)
+      .orderBy(metrics.geoLevel, metrics.geoId);
+    return rows.map((r) => ({ geoId: r.geoId, geoLevel: r.geoLevel }));
+  } catch (err) {
+    onReadError("listMetricGeos", err);
+    return [];
+  }
+}
+
+// Every stored figure for one indicator + place, oldest year first with the
+// yearless "latest" snapshot last. Powers the explorer's chart, year control,
+// and CSV export — all from the internal data, never a guessed number.
+export async function listMetricSeries(params: {
+  indicator: string;
+  geo?: string;
+}): Promise<SeriesPoint[]> {
+  const db = getDb();
+  if (!db) return [];
+  const geo = params.geo?.trim() || "US";
+  try {
+    const rows = await db
+      .select()
+      .from(metrics)
+      .where(and(eq(metrics.indicator, params.indicator), eq(metrics.geoId, geo)))
+      .orderBy(sql`${metrics.year} asc nulls last`);
+    return rows.map((r) => ({
+      year: r.year,
+      valueNumeric: r.valueNumeric,
+      valueDisplay: r.valueDisplay,
+      tag: r.measuredOrModeled,
+      source: r.source,
+      isLatest: r.isLatest,
+    }));
+  } catch (err) {
+    onReadError(`listMetricSeries ${params.indicator}/${geo}`, err);
+    return [];
+  }
+}
+
 export type ResourceRow = {
   id: number;
   type: string;

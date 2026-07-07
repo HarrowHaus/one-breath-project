@@ -3,7 +3,16 @@ import AxeBuilder from "@axe-core/playwright";
 
 // Routes checked for accessibility regressions. Grows as pages are built.
 // Includes a deliberately missing path to exercise the 404 page.
-const routes = ["/", "/story", "/risk", "/thank-you", "/styleguide", "/this-path-does-not-exist"];
+const routes = [
+  "/",
+  "/story",
+  "/risk",
+  "/data",
+  "/data/methodology",
+  "/thank-you",
+  "/styleguide",
+  "/this-path-does-not-exist",
+];
 
 for (const path of routes) {
   test(`no WCAG 2.1 A/AA violations on ${path}`, async ({ page }) => {
