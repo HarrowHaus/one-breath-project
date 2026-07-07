@@ -3,6 +3,9 @@ const nextConfig = {
   // Linting runs as its own CI step (`npm run lint`); accessibility is gated by
   // `npm run test:a11y`. Next 16 no longer runs ESLint during `next build`.
   reactStrictMode: true,
+  // Keep the Postgres driver out of the bundler so its optional Cloudflare
+  // socket shim (pg-cloudflare) resolves as a real node module on Workers.
+  serverExternalPackages: ["pg", "pg-cloudflare"],
 };
 
 export default nextConfig;

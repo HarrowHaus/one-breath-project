@@ -13,11 +13,17 @@
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "node scripts/seed.mjs",
     "test:a11y": "playwright test"
   },
   "dependencies": {
     "@uswds/uswds": "^3.13.0",
+    "drizzle-orm": "^0.45.2",
     "next": "^16.2.10",
+    "pg": "^8.22.0",
+    "pg-cloudflare": "^1.4.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
@@ -27,8 +33,10 @@
     "@opennextjs/cloudflare": "^1.20.1",
     "@playwright/test": "^1.61.1",
     "@types/node": "^22.10.0",
+    "@types/pg": "^8.20.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9.18.0",
     "eslint-config-next": "^16.2.10",
     "sass": "^1.101.0",
