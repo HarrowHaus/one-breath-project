@@ -95,3 +95,146 @@ input:focus-visible,
 .build-status {
   color: var(--obp-ink-secondary);
 }
+
+/* ============================================================
+ * Phase 3 component library styles (layered on USWDS).
+ * All colors from the design-spec palette.
+ * ============================================================ */
+
+/* ---- Hero (full-bleed, no stats) ---- */
+.obp-hero {
+  background: var(--obp-tint);
+  border-bottom: 0.25rem solid var(--obp-primary);
+  padding: 3rem 0;
+}
+.obp-hero__eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--obp-primary);
+  margin: 0 0 0.5rem;
+}
+.obp-hero__title {
+  margin: 0 0 1rem;
+  font-size: 2.4rem;
+  line-height: 1.15;
+}
+.obp-hero__lede {
+  font-size: 1.25rem;
+  max-width: 60ch;
+}
+/* The one primary action per page uses the ember accent. */
+.obp-hero__cta.usa-button {
+  margin-top: 1.5rem;
+  background-color: var(--obp-accent);
+}
+.obp-hero__cta.usa-button:hover {
+  background-color: #b63f11;
+}
+
+/* ---- Measured / Modeled data tag ---- */
+.data-tag {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.1rem 0.5rem;
+  border-radius: 0.25rem;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.data-tag--measured {
+  background: var(--obp-info-tint, #e7f6f8);
+  color: var(--obp-primary-dark);
+  border: 1px solid #a1d3dd;
+}
+.data-tag--modeled {
+  background: #ffffff;
+  color: var(--obp-ink-secondary);
+  border: 1px dashed var(--obp-ink-secondary);
+}
+.data-figure__value {
+  font-weight: 700;
+}
+
+/* ---- Audience doors ---- */
+.obp-door.usa-card__container {
+  text-decoration: none;
+  color: var(--obp-ink);
+  border: 1px solid #dfe1e2;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  height: 100%;
+}
+.obp-door:hover {
+  border-color: var(--obp-primary);
+  box-shadow: 0 2px 8px rgba(22, 46, 81, 0.15);
+}
+.obp-door .usa-card__heading {
+  color: var(--obp-primary);
+}
+.obp-door__go {
+  color: var(--obp-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* ---- Range slider ---- */
+.obp-range {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.obp-range .usa-range {
+  flex: 1;
+}
+.obp-range__value {
+  font-weight: 700;
+  min-width: 6ch;
+  text-align: right;
+}
+
+/* ---- Print-friendly checklist ---- */
+.obp-checklist__item {
+  padding: 0.35rem 0;
+  border-bottom: 1px solid #eee;
+}
+.obp-checklist__label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-size: 1.06rem;
+}
+.obp-checklist__box {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-top: 0.1rem;
+  flex: 0 0 auto;
+}
+
+@media print {
+  .site-header,
+  .site-footer,
+  .usa-skipnav,
+  .obp-print-hide {
+    display: none !important;
+  }
+  .obp-checklist__box {
+    -webkit-appearance: none;
+    appearance: none;
+    border: 2px solid #000;
+    border-radius: 2px;
+  }
+  a[href]::after {
+    content: "";
+  }
+}
+
+/* ---- Styleguide preview headings ---- */
+.obp-sg-heading {
+  border-top: 2px solid var(--obp-primary);
+  padding-top: 1rem;
+  margin-top: 2rem;
+  color: var(--obp-primary-dark);
+}
