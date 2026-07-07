@@ -1,5 +1,7 @@
-// USWDS settings overrides. Kept minimal for Phase 0 — the full design-token
-// pass (colors, type scale, spacing from /docs/06_DESIGN_SPEC.md) is Phase 1.
+// USWDS settings overrides — the project design system (build strictly to
+// /docs/06_DESIGN_SPEC.md). The spec palette maps exactly onto USWDS system
+// color tokens, so the brand is wired through USWDS tokens rather than
+// overridden: calm, institutional, senior-legible; not a government site.
 //
 // Font/image paths are relative to the compiled CSS at /uswds/css/styles.css,
 // so "../fonts" and "../img" resolve to the vendored /uswds/fonts and /uswds/img.
@@ -7,9 +9,31 @@
   $theme-image-path: "../img",
   $theme-font-path: "../fonts",
 
-  // Public Sans is the base font (design spec). Setting the sans typeface here
-  // makes USWDS bundle only the Public Sans @font-face set for body text.
+  // Type — Public Sans, senior-legible 18px base (type-scale token 7 = 18px;
+  // remap the "md" size to it and use it for body). "sm" stays 16px for small
+  // text — the spec floor, never smaller.
   $theme-font-type-sans: "public-sans",
+  // Public Sans for everything — headings included (USWDS defaults headings to
+  // serif Merriweather, which the design spec does not use).
+  $theme-font-role-heading: "sans",
+  $theme-type-scale-md: 7,
+  $theme-body-font-size: "md",
+  $theme-respect-user-font-size: true,
+
+  // Color — primary deep blue #1a4480 (blue-warm-70v), hover/active #162e51
+  // (blue-warm-80v); accent ember #d54309 (red-warm-50v), reserved for one
+  // action per page and the 911 line. Base family gray-cool already yields the
+  // spec ink (#1b1b1b) and secondary text (#565c65); info uses cyan (#e7f6f8).
+  $theme-color-primary-family: "blue-warm",
+  $theme-color-primary: "blue-warm-70v",
+  $theme-color-primary-dark: "blue-warm-80v",
+  $theme-color-primary-darker: "blue-warm-80v",
+  $theme-color-secondary-family: "red-warm",
+  $theme-color-secondary: "red-warm-50v",
+
+  // Strong, always-visible focus ring (WCAG 2.1 AA; never removed).
+  $theme-focus-width: 0.5,
+  $theme-focus-offset: 0,
 
   // Keep the compile quiet in CI.
   $theme-show-compile-warnings: false,

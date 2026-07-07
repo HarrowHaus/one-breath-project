@@ -5,7 +5,7 @@ import "./globals.css";
 
 // Verbatim from content/metadata.md (route "/") and the Open Graph fallback.
 export const metadata: Metadata = {
-  metadataBase: new URL("https://one-breath-project.pages.dev"),
+  metadataBase: new URL("https://one-breath-project.donald-dcd.workers.dev"),
   title: {
     default: "The One Breath Project — Carbon Monoxide Safety",
     template: "%s · The One Breath Project",
@@ -20,6 +20,15 @@ export const metadata: Metadata = {
   },
 };
 
+// Top navigation — exactly five items (content/global.md, docs/07_SITEMAP_AND_ROUTES.md).
+const NAV = [
+  { label: "Learn", href: "/learn" },
+  { label: "Data", href: "/data" },
+  { label: "Act", href: "/act" },
+  { label: "Resources", href: "/resources" },
+  { label: "About", href: "/about" },
+];
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -33,18 +42,44 @@ export default function RootLayout({
         <link rel="stylesheet" href="/uswds/css/styles.css" />
       </head>
       <body>
-        {/* Accessibility: skip link is the first focusable element (WCAG 2.4.1). */}
+        {/* Accessibility: skip link is the first focusable element (WCAG 2.4.1).
+            No USWDS government banner and no Identifier component — this is an
+            independent nonprofit, not a government site. */}
         <a className="usa-skipnav" href="#main-content">
           Skip to main content
         </a>
 
-        <header className="site-header">
-          <div className="grid-container">
-            {/* Wordmark + tagline are verbatim site identity (content/global.md). */}
-            <Link href="/" className="site-wordmark" aria-label="The One Breath Project — home">
-              <span className="site-wordmark__name">The One Breath Project</span>
-              <span className="site-wordmark__tagline">Silent &amp; Preventable</span>
-            </Link>
+        <header className="usa-header usa-header--basic">
+          <div className="usa-nav-container">
+            <div className="usa-navbar">
+              <div className="usa-logo">
+                {/* Wordmark + tagline are verbatim site identity (content/global.md). */}
+                <em className="usa-logo__text">
+                  <Link href="/" title="The One Breath Project">
+                    The One Breath Project
+                  </Link>
+                </em>
+                <span className="site-tagline">Silent &amp; Preventable</span>
+              </div>
+              <button type="button" className="usa-menu-btn">
+                Menu
+              </button>
+            </div>
+            <nav aria-label="Primary navigation" className="usa-nav">
+              <button type="button" className="usa-nav__close">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/uswds/img/usa-icons/close.svg" role="img" alt="Close" />
+              </button>
+              <ul className="usa-nav__primary usa-accordion">
+                {NAV.map((item) => (
+                  <li key={item.href} className="usa-nav__primary-item">
+                    <Link className="usa-nav__link" href={item.href}>
+                      <span>{item.label}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
           </div>
         </header>
 
@@ -52,6 +87,27 @@ export default function RootLayout({
 
         <footer className="site-footer">
           <div className="grid-container">
+            {/* Placeholder footer links — target pages arrive in later phases. */}
+            <nav aria-label="Footer" className="footer-links">
+              <ul>
+                <li>
+                  <Link href="/about">About</Link>
+                </li>
+                <li>
+                  <Link href="/about/sources">Our sources &amp; methods</Link>
+                </li>
+                <li>
+                  <Link href="/about/privacy">Privacy</Link>
+                </li>
+                <li>
+                  <Link href="/about/accessibility">Accessibility</Link>
+                </li>
+                <li>
+                  <Link href="/about">Contact</Link>
+                </li>
+              </ul>
+            </nav>
+
             {/* Required on every page — verbatim from content/global.md. */}
             <p className="site-footer__disclaimer">
               The One Breath Project is an independent nonprofit. We are not a
@@ -66,7 +122,7 @@ export default function RootLayout({
           </div>
         </footer>
 
-        {/* USWDS behaviors (nav toggle, etc.) — ready for later phases. */}
+        {/* USWDS behaviors (mobile nav toggle, accordion). */}
         <Script src="/uswds/js/uswds.min.js" strategy="afterInteractive" />
       </body>
     </html>

@@ -1,89 +1,97 @@
 /*
- * Phase 0 base styles. Deliberately light — Phase 1 builds the real design
- * system as USWDS Sass tokens. These rules only:
- *  - nudge the senior-legible defaults from /docs/06_DESIGN_SPEC.md
- *    (18px body, 1.6 line height, ~70ch measure, always-visible focus), and
- *  - style the scaffolding header/footer that aren't USWDS components.
- * All colors are drawn from the design-spec palette; none are invented.
+ * Project chrome layered on top of the compiled USWDS theme (styles/uswds).
+ * The design tokens (colors, 18px base type, focus width) live in the USWDS
+ * Sass theme; this file only styles the masthead/footer chrome that aren't
+ * USWDS components and enforces a couple of senior-legible defaults from
+ * /docs/06_DESIGN_SPEC.md. All colors come from the spec palette.
  */
 
 :root {
   --obp-primary: #1a4480;
   --obp-primary-dark: #162e51;
-  --obp-accent: #d54309; /* ember — used only as an accent rule, never body text */
+  --obp-accent: #d54309; /* ember — one action per page and the 911 line only */
   --obp-ink: #1b1b1b;
   --obp-ink-secondary: #565c65;
   --obp-tint: #f0f0f0;
 }
 
-/* Senior-legible body defaults. */
+/* Senior-legible reading defaults (base 18px comes from the USWDS theme). */
 body {
-  font-size: 1.125rem; /* 18px */
   line-height: 1.6;
   color: var(--obp-ink);
 }
 
-/* Cap the reading measure for long-form text (~70–75 characters). */
-main p {
-  max-width: 68ch;
+/* Cap the reading measure for long-form prose (~70–75 characters). */
+main :is(p, li) {
+  max-width: 72ch;
 }
 
-/* Never remove focus outlines; keep a high-contrast, visible ring everywhere. */
+/* Always-visible, high-contrast focus ring on anything USWDS doesn't cover. */
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
 [tabindex]:focus-visible {
-  outline: 4px solid var(--obp-primary);
-  outline-offset: 2px;
+  outline: 0.25rem solid var(--obp-primary);
+  outline-offset: 0;
 }
 
-/* Scaffolding header */
-.site-header {
-  border-bottom: 4px solid var(--obp-primary);
-  padding: 1.25rem 0;
-  background: #ffffff;
+/* ---- Masthead ---- */
+.usa-header {
+  border-bottom: 0.25rem solid var(--obp-primary);
 }
 
-.site-wordmark {
-  display: inline-flex;
-  flex-direction: column;
-  text-decoration: none;
-  line-height: 1.2;
-}
-
-.site-wordmark__name {
+/* Wordmark in primary blue (design spec), not the default ink. */
+.usa-logo__text a {
   color: var(--obp-primary);
-  font-weight: 600;
-  font-size: 1.5rem;
+  text-decoration: none;
 }
 
-.site-wordmark__tagline {
+/* Tagline sits under the wordmark. */
+.site-tagline {
+  display: block;
   color: var(--obp-ink-secondary);
   font-size: 1rem;
   letter-spacing: 0.03em;
+  margin-top: 0.25rem;
 }
 
-.build-status {
-  color: var(--obp-ink-secondary);
-}
-
-/* Scaffolding footer */
+/* ---- Footer ---- */
 .site-footer {
-  margin-top: 3rem;
+  margin-top: 4rem;
   padding: 2rem 0;
   background: var(--obp-tint);
   color: var(--obp-ink);
 }
 
+.footer-links ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+}
+
+.footer-links a {
+  color: var(--obp-primary);
+  font-weight: 600;
+}
+
 .site-footer__disclaimer {
-  max-width: 68ch;
+  max-width: 72ch;
+  margin: 0 0 1rem;
 }
 
 /* Ember accent as a rule, not as body-text color (keeps AA contrast). */
 .site-footer__emergency {
-  max-width: 68ch;
-  margin-top: 1rem;
+  max-width: 72ch;
+  margin: 0;
   padding-left: 0.75rem;
-  border-left: 4px solid var(--obp-accent);
+  border-left: 0.25rem solid var(--obp-accent);
   font-weight: 600;
+}
+
+/* ---- Misc placeholder ---- */
+.build-status {
+  color: var(--obp-ink-secondary);
 }
