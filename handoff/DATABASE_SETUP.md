@@ -10,6 +10,11 @@ Cloudflare dashboard (production).
 
 Either provider works — the app uses plain Postgres. Pick one.
 
+> **Already provisioned:** the live project `one-breath-project`
+> (`dgkglyaavyewxjkrsflx`) in the Harrow.Haus org already has the tables created
+> and the CDC figures seeded (done via the Supabase connector). For that project
+> you can skip step 3 below — just wire `DATABASE_URL` (step 2) and you're live.
+
 ### Option A — Supabase
 
 1. In your Supabase project, go to **Project Settings → Database**.
@@ -17,20 +22,22 @@ Either provider works — the app uses plain Postgres. Pick one.
    **Transaction** mode. This is the right one for serverless/Cloudflare Workers.
    It looks like:
    `postgresql://postgres.PROJECTREF:PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres`
-3. Add `?sslmode=require` to the end if it isn't already there.
-4. Enable PostGIS (used by the resources map in Phase 8). In the Supabase **SQL
-   Editor** run: `CREATE EXTENSION IF NOT EXISTS postgis;`
+   Add `?sslmode=require` to the end if it isn't already there. (Reset the
+   database password under **Settings → Database** if you don't have it.)
 
 ### Option B — Neon
 
 1. Sign up at **neon.tech**, create a project.
 2. Copy the **pooled** connection string:
    `postgresql://USER:PASSWORD@ep-xxxx-pooler.REGION.aws.neon.tech/DB?sslmode=require`
-3. Enable PostGIS in the Neon SQL editor: `CREATE EXTENSION IF NOT EXISTS postgis;`
 
 The app enables SSL automatically for any non-localhost connection. For higher
 production traffic, Cloudflare **Hyperdrive** can pool connections in front of
 either provider — a drop-in later.
+
+**PostGIS:** not needed yet. The resources map in Phase 8 enables it (in a
+dedicated `extensions` schema, the Supabase-recommended way). Phase 2A/2B store
+plain lat/lng.
 
 ## 2. Set the environment variables
 
@@ -82,7 +89,7 @@ placeholder.
 A local Postgres works without a managed provider:
 
 ```
-createdb one_breath && psql one_breath -c 'CREATE EXTENSION IF NOT EXISTS postgis;'
+createdb one_breath
 # .env: DATABASE_URL=postgres://USER@localhost:5432/one_breath
 npm run db:migrate && npm run db:seed && npm run dev
 ```
