@@ -244,6 +244,37 @@ input:focus-visible,
   color: var(--obp-primary-dark);
 }
 
+/* ---- Harm pyramid (Phase 5) ---- */
+/* Deaths are the small tip; each counted tier widens toward the uncounted base.
+ * Centered rows form the pyramid silhouette; every tier carries its own tag. */
+.obp-pyramid {
+  margin: 1.5rem 0;
+}
+.obp-pyramid__tier {
+  margin: 0.4rem auto;
+  padding: 0.85rem 1rem;
+  background: var(--obp-primary);
+  color: #fff;
+  border-radius: 0.25rem;
+  text-align: center;
+  line-height: 1.4;
+}
+.obp-pyramid__tier--base {
+  background: var(--obp-tint);
+  color: var(--obp-ink);
+}
+.obp-pyramid__figure {
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+.obp-pyramid__label {
+  font-weight: 600;
+}
+/* Tags sit legibly on the dark tiers. */
+.obp-pyramid__tier .data-tag {
+  margin-top: 0.35rem;
+}
+
 /* ---- Landing scale band ---- */
 .obp-section-tint {
   background: var(--obp-tint);
