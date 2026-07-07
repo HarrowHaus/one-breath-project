@@ -50,6 +50,14 @@ export function getDb(): DB | null {
     ssl: viaHyperdrive || isLocal ? undefined : { rejectUnauthorized: true },
     max: 5,
   });
+
+  // An idle client emitting an 'error' with no listener crashes the whole
+  // Worker isolate (Cloudflare error 1101). Swallow it — the next query just
+  // opens a fresh connection.
+  pool.on("error", (err) => {
+    console.error("pg pool error:", err?.message);
+  });
+
   db = drizzle(pool, { schema });
   return db;
 }
