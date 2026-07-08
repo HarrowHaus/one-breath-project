@@ -376,6 +376,34 @@ input:focus-visible,
   border: 0;
 }
 
+/* ============================================================
+ * Phase 7 — Audience journeys
+ * ============================================================ */
+
+/* Renter request generator */
+.obp-request__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+.obp-request textarea {
+  font-size: 1.06rem;
+  line-height: 1.5;
+}
+
+/* Senior/caregiver page — larger, higher-contrast type by default. */
+.obp-caregiver .usa-prose {
+  font-size: 1.18rem;
+  line-height: 1.7;
+}
+.obp-caregiver .obp-hero__lede {
+  font-size: 1.4rem;
+}
+.obp-caregiver .obp-checklist__label {
+  font-size: 1.18rem;
+}
+
 /* ---- Landing scale band ---- */
 .obp-section-tint {
   background: var(--obp-tint);
