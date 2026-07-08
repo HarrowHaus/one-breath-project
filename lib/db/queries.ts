@@ -1,6 +1,6 @@
 import { and, desc, eq, lt, or, isNull, sql } from "drizzle-orm";
 import { getDb, resetDb } from "./index";
-import { metrics, resources } from "./schema";
+import { metrics, pledges, resources } from "./schema";
 
 // A transient DB failure (e.g. a dropped Hyperdrive/Supabase connection) must
 // never crash a page render (Cloudflare error 1101). Read-path queries route
@@ -312,6 +312,22 @@ export async function findLocalResources(zipRaw: string): Promise<LocalResources
     onReadError(`findLocalResources ${zip}`, err);
     return empty;
   }
+}
+
+// Advocacy-hub pledge (Phase 9). Public write — `wantsUpdates` comes from an
+// unchecked-by-default box, so opting into updates is explicit.
+export async function insertPledge(input: {
+  name: string;
+  email: string;
+  wantsUpdates: boolean;
+}): Promise<void> {
+  const db = getDb();
+  if (!db) throw new Error("Database is not configured.");
+  await db.insert(pledges).values({
+    name: input.name,
+    email: input.email,
+    wantsUpdates: input.wantsUpdates,
+  });
 }
 
 // ---- Admin mutations (guarded by the /manage password) ----

@@ -440,6 +440,26 @@ input:focus-visible,
   font-size: 0.95rem;
 }
 
+/* ============================================================
+ * Phase 9 — Act / advocacy + About
+ * ============================================================ */
+.obp-quote {
+  border-left: 0.25rem solid var(--obp-primary);
+  padding: 0.5rem 0 0.5rem 1rem;
+  margin: 1rem 0;
+  color: var(--obp-ink);
+  font-size: 1.1rem;
+}
+.obp-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.obp-copy__done {
+  color: #2e8540;
+  font-weight: 600;
+}
+
 /* ---- Landing scale band ---- */
 .obp-section-tint {
   background: var(--obp-tint);

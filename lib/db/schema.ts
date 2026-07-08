@@ -82,3 +82,14 @@ export const stories = pgTable("stories", {
   media: text("media"),
   consentStatus: text("consent_status").notNull().default("public_news"),
 });
+
+// Advocacy-hub pledges (Phase 9). Honest opt-in: `wantsUpdates` reflects an
+// unchecked-by-default box, so consent to updates is explicit. Minimal fields,
+// consistent with the privacy standard (name + email, used only for this).
+export const pledges = pgTable("pledges", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  wantsUpdates: boolean("wants_updates").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});

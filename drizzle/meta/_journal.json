@@ -15,6 +15,13 @@
       "when": 1783440053642,
       "tag": "0001_metrics_year_uniq",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783546371012,
+      "tag": "0002_square_proteus",
+      "breakpoints": true
     }
   ]
 }
