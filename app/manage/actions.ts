@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { clearSession, isAuthed, setSession, verifyPassword } from "@/lib/auth";
 import { CONNECTORS, NotConfiguredError } from "@/lib/connectors";
+import { NATIONAL_FIGURES } from "@/lib/national-figures";
 import {
   insertResource,
   upsertLatestMetric,
@@ -106,6 +107,25 @@ export async function runConnectorAction(formData: FormData): Promise<void> {
   revalidatePath("/manage");
   revalidatePath("/data");
   redirect(`/manage?ran=${encodeURIComponent(summary.slice(0, 800))}`);
+}
+
+// One-click load of the national headline figures (the harm pyramid / scale
+// band). Upserts the "latest" US row for each with its exact period-bearing
+// tag — no manual typing, and the tags are more precise than the form dropdown
+// allows. Idempotent; safe to re-run.
+export async function seedNationalAction(): Promise<void> {
+  await requireAuth();
+  for (const fig of NATIONAL_FIGURES) {
+    await upsertLatestMetric(fig);
+  }
+  revalidatePath("/manage");
+  revalidatePath("/risk");
+  revalidatePath("/");
+  redirect(
+    `/manage?ran=${encodeURIComponent(
+      `Loaded ${NATIONAL_FIGURES.length} national figures (Sircar 2019): ${NATIONAL_FIGURES.map((f) => `${f.indicator} = ${f.valueDisplay}`).join(" | ")}`,
+    )}`,
+  );
 }
 
 export async function verifyResourceAction(formData: FormData): Promise<void> {

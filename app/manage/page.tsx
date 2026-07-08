@@ -8,6 +8,7 @@ import {
   runConnectorAction,
   saveMetricAction,
   saveResourceAction,
+  seedNationalAction,
   verifyResourceAction,
 } from "./actions";
 
@@ -161,6 +162,17 @@ export default async function ManagePage({
           <input type="hidden" name="connector" value="cdc-tracking" />
           <button className="usa-button" type="submit">
             Run CDC Tracking (deaths, ER visits, hospitalizations by state &amp; year)
+          </button>
+        </form>
+
+        <p className="text-base margin-top-3">
+          Load the national headline figures (the harm pyramid and landing scale
+          band) from the published Sircar 2019 estimate, with their exact
+          Measured/Modeled tags and periods. Idempotent — safe to re-run.
+        </p>
+        <form action={seedNationalAction} className="usa-form">
+          <button className="usa-button usa-button--outline" type="submit">
+            Load national figures (Sircar 2019)
           </button>
         </form>
 
