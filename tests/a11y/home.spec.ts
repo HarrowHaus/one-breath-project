@@ -12,6 +12,8 @@ const routes = [
   "/renters",
   "/landlords",
   "/caregivers",
+  "/resources",
+  "/resources/grants-and-programs",
   "/thank-you",
   "/styleguide",
   "/this-path-does-not-exist",

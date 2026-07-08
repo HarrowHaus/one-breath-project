@@ -404,6 +404,42 @@ input:focus-visible,
   font-size: 1.18rem;
 }
 
+/* ============================================================
+ * Phase 8 — Resources hub + local finder
+ * ============================================================ */
+.obp-emergency.usa-alert--error {
+  border-left-width: 0.5rem;
+}
+.obp-finder__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+.obp-finder__panel {
+  margin-top: 2rem;
+  border: 1px solid #dfe1e2;
+  border-radius: 0.25rem;
+  padding: 1.5rem;
+}
+.obp-finder__group {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #eee;
+}
+.obp-finder__group h3 {
+  margin: 0 0 0.5rem;
+  color: var(--obp-primary-dark);
+  font-size: 1.15rem;
+}
+.obp-finder__item {
+  padding: 0.35rem 0;
+  font-size: 1.06rem;
+}
+.obp-finder__meta {
+  color: var(--obp-ink-secondary);
+  font-size: 0.95rem;
+}
+
 /* ---- Landing scale band ---- */
 .obp-section-tint {
   background: var(--obp-tint);

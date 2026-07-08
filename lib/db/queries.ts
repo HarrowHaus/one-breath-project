@@ -241,6 +241,79 @@ export async function listStaleResources(months = 6): Promise<ResourceRow[]> {
   }
 }
 
+// Map a raw resources row to the API shape.
+function toResourceRow(r: typeof resources.$inferSelect): ResourceRow {
+  return {
+    id: r.id,
+    type: r.type,
+    name: r.name,
+    geo: r.geoId,
+    lat: r.lat,
+    lng: r.lng,
+    phone: r.phone,
+    url: r.url,
+    notes: r.notes,
+    source: r.source,
+    verifiedAt: r.verifiedAt ? r.verifiedAt.toISOString() : null,
+  };
+}
+
+export type LocalResources = {
+  zip: string;
+  state: string | null;
+  fireDepartments: ResourceRow[];
+  gasUtilities: ResourceRow[];
+  installers: ResourceRow[];
+};
+
+// The local finder. Fire-department addresses are stored in `notes` with their
+// ZIP; coordinates aren't geocoded yet, so we match on the address text rather
+// than distance: same 5-digit ZIP first, then the same 3-digit ZIP area (USPS
+// sectional center). State is derived from the matches, and any curated gas
+// utilities / installers for that state are attached. Missing categories come
+// back empty so the panel hides those rows (never a guess).
+export async function findLocalResources(zipRaw: string): Promise<LocalResources> {
+  const zip = (zipRaw || "").replace(/\D/g, "").slice(0, 5);
+  const empty: LocalResources = { zip, state: null, fireDepartments: [], gasUtilities: [], installers: [] };
+
+  const db = getDb();
+  if (!db || zip.length !== 5) return empty;
+  const zip3 = zip.slice(0, 3);
+  // A 5-digit token beginning with the requested 3-digit area.
+  const areaRe = `(^|[^0-9])${zip3}[0-9][0-9]([^0-9]|$)`;
+
+  try {
+    const fire = await db
+      .select()
+      .from(resources)
+      .where(and(eq(resources.type, "fire_department"), sql`${resources.notes} ~ ${areaRe}`))
+      .limit(30);
+
+    const ranked = fire
+      .map(toResourceRow)
+      // Exact 5-digit ZIP matches sort ahead of same-area matches.
+      .sort((a, b) => Number(b.notes?.includes(zip) ?? false) - Number(a.notes?.includes(zip) ?? false));
+    const fireDepartments = ranked.slice(0, 6);
+    const state = fireDepartments[0]?.geo ?? null;
+
+    let gasUtilities: ResourceRow[] = [];
+    let installers: ResourceRow[] = [];
+    if (state) {
+      const [gas, inst] = await Promise.all([
+        db.select().from(resources).where(and(eq(resources.type, "gas_utility"), eq(resources.geoId, state))).limit(3),
+        db.select().from(resources).where(and(eq(resources.type, "installer"), eq(resources.geoId, state))).limit(6),
+      ]);
+      gasUtilities = gas.map(toResourceRow);
+      installers = inst.map(toResourceRow);
+    }
+
+    return { zip, state, fireDepartments, gasUtilities, installers };
+  } catch (err) {
+    onReadError(`findLocalResources ${zip}`, err);
+    return empty;
+  }
+}
+
 // ---- Admin mutations (guarded by the /manage password) ----
 
 // All current metrics, for the admin table.
