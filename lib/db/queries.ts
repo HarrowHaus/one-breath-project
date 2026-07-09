@@ -379,11 +379,20 @@ export async function geocodeFireDepartmentsBatch(
   const db = getDb();
   if (!db) throw new Error("Database is not configured.");
 
-  // Ensure the tracking column exists (idempotent) so this runs on a database
-  // where migration 0003 hasn't been applied yet — the button is self-sufficient.
-  await db.execute(
-    sql.raw(`ALTER TABLE resources ADD COLUMN IF NOT EXISTS geocode_attempted_at timestamptz`),
-  );
+  // Ensure the tracking column exists (idempotent) for a database where migration
+  // 0003 hasn't been applied yet. In production the column IS created by that
+  // migration, but the app/connector role does not OWN the resources table, and
+  // Postgres checks ownership before the IF NOT EXISTS no-op short-circuits — so a
+  // non-owner role raises a permission error here even though the column already
+  // exists. That must not abort the run: swallow it. If the column is genuinely
+  // missing, the geocodeAttemptedAt query just below fails loudly instead.
+  try {
+    await db.execute(
+      sql.raw(`ALTER TABLE resources ADD COLUMN IF NOT EXISTS geocode_attempted_at timestamptz`),
+    );
+  } catch {
+    // Non-owner role can't run DDL; the column is provided by migration 0003.
+  }
 
   const pending = and(
     eq(resources.type, "fire_department"),
