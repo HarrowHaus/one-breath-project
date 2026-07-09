@@ -9,17 +9,17 @@ SEO, and the deferrals noted across the build).
 
 ---
 
-## Tier 1 — I can do now (code, no external dependencies)
+## Tier 1 — I can do now (code, no external dependencies) — ✅ DONE
 
-These need nothing from you. This is "the start of the list."
+All seven shipped (commit follows this doc update).
 
-1. **☐ 🤖 SEO: `sitemap.xml` + `robots.txt`.** No `app/sitemap.ts` / `app/robots.ts` exist. Add a sitemap of the public routes and a robots file that allows crawling but disallows `/manage` and `/api`.
-2. **☐ 🤖 Noindex non-public pages.** `/styleguide` (dev preview) and `/manage` should carry `noindex`. `/manage` and `/thank-you` already do; add it to `/styleguide` (or drop the route before launch).
-3. **☐ 🤖 Instrument the rest of the docs/10 conversions.** Today only 3 of the named goals fire (renter request, landlord toolkit, caregiver checklist). Still to wire: **risk-tool completed**, **alarm-test reminder set** (the .ics), **pledge added**, **landlord → installer click**.
-4. **☐ 🤖 Open Graph share image.** Only `icon.svg` exists. Add a branded OG image so shared links preview well (the Share buttons on /act especially).
-5. **☐ 🤖 Parameterize the site URL.** `metadataBase` is hard-coded to the `workers.dev` URL. Move it to an env var so the custom-domain swap is a config change, not a code edit.
-6. **☐ 🤖 Harden the DB read path.** Uncached metric reads still occasionally return Cloudflare 1101 (transient Hyperdrive→Supabase drop). Add a single retry on connection error before falling back, so a blip is invisible.
-7. **☐ 🤖 Cleanup.** Stale comment in `app/layout.tsx` ("footer links — target pages arrive in later phases"); those pages now exist.
+1. **✅ 🤖 SEO: `sitemap.xml` + `robots.txt`.** `app/sitemap.ts` (25 public routes) + `app/robots.ts` (allows crawl; disallows /manage, /api/, /styleguide, /thank-you; links the sitemap).
+2. **✅ 🤖 Noindex non-public pages.** `/styleguide` already carried `noindex`; also excluded in robots. `/manage` + `/thank-you` noindexed.
+3. **✅ 🤖 Instrument the rest of the docs/10 conversions.** Now firing: risk-tool completed, alarm-test reminder set, pledge added, landlord → installer click (plus the original three).
+4. **✅ 🤖 Open Graph share image.** Branded 1200×630 `public/og.png`, wired into OpenGraph + Twitter metadata.
+5. **✅ 🤖 Parameterize the site URL.** `lib/site.ts` reads `NEXT_PUBLIC_SITE_URL` (falls back to the Worker URL); used by metadataBase, sitemap, robots.
+6. **✅ 🤖 Harden the DB read path.** `getMetric` and `listMetricSeries` now retry once on a dropped connection (fresh pool) before falling back.
+7. **✅ 🤖 Cleanup.** Stale `app/layout.tsx` footer comment fixed.
 
 ---
 

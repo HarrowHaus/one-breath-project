@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import Link from "next/link";
+import { track } from "@/lib/track";
 
 // "Is your home at risk?" — five questions, verbatim from content/experiences.md,
 // returning a plain-language personal read and ONE action. Nothing is saved or
@@ -98,6 +99,7 @@ function downloadIcs(dateStr: string) {
   link.download = "test-your-co-alarm.ics";
   link.click();
   URL.revokeObjectURL(url);
+  track("Alarm test reminder set");
 }
 
 function Reminder() {
@@ -174,7 +176,9 @@ export function RiskTool() {
       return;
     }
     setError(false);
-    setResult(computeResult(answers));
+    const r = computeResult(answers);
+    setResult(r);
+    track("Risk tool completed", { result: r });
   }
 
   if (result) {

@@ -1,8 +1,8 @@
 /* eslint-disable react/no-unescaped-entities */
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Accordion } from "@/components/Accordion";
 import { PrintButton } from "@/components/PrintButton";
+import { TrackLink } from "@/components/TrackLink";
 
 // Landlord / owner journey. Copy verbatim from content/journeys/landlord.md;
 // metadata from content/metadata.md. Leads with defensibility, not fear.
@@ -103,7 +103,10 @@ export default function LandlordsPage() {
           <PrintButton label="Download the landlord toolkit" event="Landlord toolkit downloaded" />
         </p>
         <p>
-          <Link href="/resources">Find a qualified installer near you</Link>.
+          <TrackLink href="/resources" event="Landlord installer click">
+            Find a qualified installer near you
+          </TrackLink>
+          .
         </p>
       </div>
     </article>

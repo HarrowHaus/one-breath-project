@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Script from "next/script";
 import { Analytics } from "@/components/Analytics";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 // Verbatim from content/metadata.md (route "/") and the Open Graph fallback.
 export const metadata: Metadata = {
-  metadataBase: new URL("https://one-breath-project.donald-dcd.workers.dev"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "The One Breath Project — Carbon Monoxide Safety",
     template: "%s · The One Breath Project",
@@ -18,6 +19,14 @@ export const metadata: Metadata = {
     description:
       "Carbon monoxide kills quietly, and almost every death is preventable. Learn how to protect your home tonight.",
     type: "website",
+    images: ["/og.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "The One Breath Project — Silent & Preventable.",
+    description:
+      "Carbon monoxide kills quietly, and almost every death is preventable. Learn how to protect your home tonight.",
+    images: ["/og.png"],
   },
 };
 
@@ -89,7 +98,7 @@ export default function RootLayout({
 
         <footer className="site-footer">
           <div className="grid-container">
-            {/* Placeholder footer links — target pages arrive in later phases. */}
+            {/* Footer links — About, sources & methods, privacy, accessibility, contact. */}
             <nav aria-label="Footer" className="footer-links">
               <ul>
                 <li>

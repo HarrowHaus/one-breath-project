@@ -1,6 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 import type { Metadata } from "next";
 import { CopyButton } from "@/components/CopyButton";
+import { PledgeSubmit } from "@/components/PledgeSubmit";
 import { pledgeAction } from "./actions";
 
 // Act / advocacy hub. Copy verbatim from content/act.md; metadata from
@@ -89,9 +90,7 @@ export default async function ActPage({
             </label>
           </div>
 
-          <button type="submit" className="usa-button obp-cta margin-top-3">
-            Add my name
-          </button>
+          <PledgeSubmit />
         </form>
 
         {/* Contact your representatives */}
