@@ -8,6 +8,9 @@ node_modules/
 out/
 next-env.d.ts
 
+# TypeScript incremental build cache
+*.tsbuildinfo
+
 # Cloudflare / OpenNext
 .wrangler/
 .dev.vars
