@@ -460,6 +460,17 @@ input:focus-visible,
   font-weight: 600;
 }
 
+/* ---- Learn hub (Phase 4B) ---- */
+.obp-next {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--obp-primary);
+}
+.obp-door .usa-card__footer {
+  padding-top: 0;
+}
+
 /* ---- Landing scale band ---- */
 .obp-section-tint {
   background: var(--obp-tint);
