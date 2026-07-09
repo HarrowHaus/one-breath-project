@@ -100,7 +100,7 @@ export default function LandlordsPage() {
 
         <h2 className="margin-top-4">Actions</h2>
         <p>
-          <PrintButton label="Download the landlord toolkit" />
+          <PrintButton label="Download the landlord toolkit" event="Landlord toolkit downloaded" />
         </p>
         <p>
           <Link href="/resources">Find a qualified installer near you</Link>.

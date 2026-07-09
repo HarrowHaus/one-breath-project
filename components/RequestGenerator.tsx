@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { track } from "@/lib/track";
 
 // The renter's request generator: a pre-written message (verbatim from
 // content/journeys/renter.md) the reader edits, then copies or opens in their
@@ -34,6 +35,7 @@ export function RequestGenerator() {
       document.execCommand("copy");
       document.body.removeChild(ta);
     }
+    track("Renter request copied");
     setCopied(true);
   }
 

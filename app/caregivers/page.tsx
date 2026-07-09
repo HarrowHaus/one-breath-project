@@ -50,7 +50,7 @@ export default function CaregiversPage() {
 
         <h2>Ten-minute checklist</h2>
         <p>For you or the person you care for. Print this, or do it together on the phone.</p>
-        <Checklist items={CHECKLIST} />
+        <Checklist items={CHECKLIST} printLabel="Download the checklist" event="Caregiver checklist printed" />
         <p className="margin-top-2">
           <Link href="/resources">Find help near me</Link>
         </p>

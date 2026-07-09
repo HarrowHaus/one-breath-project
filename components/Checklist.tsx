@@ -6,9 +6,13 @@ import { PrintButton } from "./PrintButton";
 export function Checklist({
   title,
   items,
+  printLabel,
+  event,
 }: {
   title?: string;
   items: string[];
+  printLabel?: string;
+  event?: string;
 }) {
   return (
     <div className="obp-checklist">
@@ -23,7 +27,7 @@ export function Checklist({
           </li>
         ))}
       </ul>
-      <PrintButton />
+      <PrintButton label={printLabel} event={event} />
     </div>
   );
 }

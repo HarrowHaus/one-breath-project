@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Script from "next/script";
+import { Analytics } from "@/components/Analytics";
 import "./globals.css";
 
 // Verbatim from content/metadata.md (route "/") and the Open Graph fallback.
@@ -40,6 +41,7 @@ export default function RootLayout({
             ../fonts and ../img URLs resolve to the vendored assets. */}
         {/* eslint-disable-next-line @next/next/no-css-tags */}
         <link rel="stylesheet" href="/uswds/css/styles.css" />
+        <Analytics />
       </head>
       <body>
         {/* Accessibility: skip link is the first focusable element (WCAG 2.4.1).
