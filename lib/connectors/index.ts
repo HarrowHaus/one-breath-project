@@ -306,7 +306,9 @@ async function runNeiss(): Promise<ConnectorResult> {
 // distance/radius search and plot a map. Batched + resumable: run until done.
 // ---------------------------------------------------------------------------
 async function runGeocode(): Promise<ConnectorResult> {
-  const { selected, matched, remaining } = await geocodeFireDepartmentsBatch(1000);
+  // ~3k per click keeps the Census request + bulk update well within Worker
+  // limits while draining the ~27k registry in roughly nine clicks.
+  const { selected, matched, remaining } = await geocodeFireDepartmentsBatch(3000);
   const notes =
     selected === 0
       ? ["Nothing left to geocode — all fire-department addresses have been attempted."]

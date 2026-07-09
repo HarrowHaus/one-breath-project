@@ -25,7 +25,7 @@ All seven shipped (commit follows this doc update).
 
 ## Tier 2 — I can do, but needs your input or an account first
 
-8. **◐ 👤 Load the final national figures to production.** Live site still shows the *older* numbers and the harm-pyramid **hospitalization tier is dark**. Fix: `/manage` → **"Load national figures (Sircar 2019)."** (I'd do it directly but the Supabase connector is offline this session.)
+8. **✅ Load the final national figures to production.** Done — the Sircar 2019 figures (deaths "at least 430" Measured/NVSS; ER visits "about 101,847" Modeled 2007–2013; hospitalizations "about 14,365" Modeled 2003–2013) are live in prod and the harm-pyramid hospitalization tier now renders. (Applied directly via the Supabase connector.)
 9. **☐ 👤 Turn on analytics.** Cookieless Plausible is wired and off-by-default. Needs: a Plausible account, the `NEXT_PUBLIC_PLAUSIBLE_DOMAIN` build var on Cloudflare, and the 3 (soon 7) goals defined. See LAUNCH_CHECKLIST §4.
 10. **☐ 👤 Custom domain.** Point your real domain at the Worker (currently `one-breath-project.donald-dcd.workers.dev`) and set the site-URL var from item 5.
 11. **◐ 🤖/👤 Fire-department geocoding → map + radius search.** ✅ BUILT: `/resources` now does true nearest-by-distance (Census geocoding) and shows a MapLibre map with markers when coordinates exist; degrades to the ZIP/text list otherwise. **To populate production:** sign into `/manage` → **"Geocode fire departments (next batch)"** and click until it says done (~27k rows, 1,000/click), or run `DATABASE_URL=<prod> node scripts/geocode-resources.mjs` to drain it in one go. Verified end-to-end locally (real SC departments, distance-sorted, map renders).
