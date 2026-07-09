@@ -68,6 +68,9 @@ export const resources = pgTable(
     source: text("source").notNull(),
     retrievedAt: timestamp("retrieved_at", { withTimezone: true }).notNull().defaultNow(),
     verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    // Set once we've tried to geocode this row (matched or not), so the geocoder
+    // advances past addresses the Census service couldn't resolve.
+    geocodeAttemptedAt: timestamp("geocode_attempted_at", { withTimezone: true }),
   },
   (t) => [index("resources_type_geo_idx").on(t.type, t.geoId)],
 );

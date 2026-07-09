@@ -1,5 +1,6 @@
-import { and, desc, eq, lt, or, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, lt, or, isNull, isNotNull, inArray, sql } from "drizzle-orm";
 import { getDb, resetDb } from "./index";
+import { censusBatchGeocode, parseAddress, type ParsedAddress } from "@/lib/geocode";
 import { metrics, pledges, resources } from "./schema";
 
 // A transient DB failure (e.g. a dropped Hyperdrive/Supabase connection) must
@@ -187,6 +188,9 @@ export type ResourceRow = {
   notes: string | null;
   source: string;
   verifiedAt: string | null;
+  // Miles from the searcher's location — set only by the local finder when both
+  // the department and the search origin are geocoded.
+  distanceMiles?: number | null;
 };
 
 export async function listResources(params: {
@@ -286,10 +290,12 @@ export type LocalResources = {
   installers: ResourceRow[];
 };
 
-// The local finder. Fire-department addresses are stored in `notes` with their
-// ZIP; coordinates aren't geocoded yet, so we match on the address text rather
-// than distance: same 5-digit ZIP first, then the same 3-digit ZIP area (USPS
-// sectional center). State is derived from the matches, and any curated gas
+// The local finder. Fire-department addresses live in `notes` with their ZIP.
+// We first area-match by ZIP text (same 5-digit ZIP, then same 3-digit USPS
+// area) to establish the region. If those departments are geocoded, we use their
+// centroid as the search origin and return the true NEAREST departments by
+// distance (radius search) with a mile figure each; otherwise we fall back to
+// the text-matched list. State is derived from the matches; curated gas
 // utilities / installers for that state are attached. Missing categories come
 // back empty so the panel hides those rows (never a guess).
 export async function findLocalResources(zipRaw: string): Promise<LocalResources> {
@@ -299,22 +305,51 @@ export async function findLocalResources(zipRaw: string): Promise<LocalResources
   const db = getDb();
   if (!db || zip.length !== 5) return empty;
   const zip3 = zip.slice(0, 3);
-  // A 5-digit token beginning with the requested 3-digit area.
   const areaRe = `(^|[^0-9])${zip3}[0-9][0-9]([^0-9]|$)`;
 
   try {
-    const fire = await db
+    const areaRows = await db
       .select()
       .from(resources)
       .where(and(eq(resources.type, "fire_department"), sql`${resources.notes} ~ ${areaRe}`))
       .limit(30);
 
-    const ranked = fire
+    const ranked = areaRows
       .map(toResourceRow)
-      // Exact 5-digit ZIP matches sort ahead of same-area matches.
       .sort((a, b) => Number(b.notes?.includes(zip) ?? false) - Number(a.notes?.includes(zip) ?? false));
-    const fireDepartments = ranked.slice(0, 6);
-    const state = fireDepartments[0]?.geo ?? null;
+    const state = ranked[0]?.geo ?? null;
+
+    // Search origin = centroid of the area-matched departments that are geocoded.
+    const geocoded = ranked.filter((r) => r.lat != null && r.lng != null);
+    let fireDepartments: ResourceRow[];
+    if (geocoded.length > 0) {
+      const originLat = geocoded.reduce((s, r) => s + (r.lat as number), 0) / geocoded.length;
+      const originLng = geocoded.reduce((s, r) => s + (r.lng as number), 0) / geocoded.length;
+      const dist = sql`3959 * acos(greatest(-1, least(1,
+        cos(radians(${originLat})) * cos(radians(${resources.lat})) *
+        cos(radians(${resources.lng}) - radians(${originLng})) +
+        sin(radians(${originLat})) * sin(radians(${resources.lat}))
+      )))`;
+      const near = await db
+        .select({
+          id: resources.id, type: resources.type, name: resources.name, geoId: resources.geoId,
+          lat: resources.lat, lng: resources.lng, phone: resources.phone, url: resources.url,
+          notes: resources.notes, source: resources.source, verifiedAt: resources.verifiedAt,
+          distance: dist.as("distance"),
+        })
+        .from(resources)
+        .where(and(eq(resources.type, "fire_department"), isNotNull(resources.lat)))
+        .orderBy(sql`distance asc`)
+        .limit(6);
+      fireDepartments = near.map((r) => ({
+        id: r.id, type: r.type, name: r.name, geo: r.geoId, lat: r.lat, lng: r.lng,
+        phone: r.phone, url: r.url, notes: r.notes, source: r.source,
+        verifiedAt: r.verifiedAt ? r.verifiedAt.toISOString() : null,
+        distanceMiles: r.distance != null ? Math.round(Number(r.distance) * 10) / 10 : null,
+      }));
+    } else {
+      fireDepartments = ranked.slice(0, 6);
+    }
 
     let gasUtilities: ResourceRow[] = [];
     let installers: ResourceRow[] = [];
@@ -332,6 +367,75 @@ export async function findLocalResources(zipRaw: string): Promise<LocalResources
     onReadError(`findLocalResources ${zip}`, err);
     return empty;
   }
+}
+
+// Geocode the next batch of fire departments that have an address but no
+// coordinates. Uses the Census batch geocoder; matched rows get lat/lng, and
+// ALL selected rows are marked attempted so unresolved addresses don't recycle.
+// Idempotent and resumable — safe to run repeatedly until `remaining` is 0.
+export async function geocodeFireDepartmentsBatch(
+  limit = 1000,
+): Promise<{ selected: number; matched: number; remaining: number }> {
+  const db = getDb();
+  if (!db) throw new Error("Database is not configured.");
+
+  // Ensure the tracking column exists (idempotent) so this runs on a database
+  // where migration 0003 hasn't been applied yet — the button is self-sufficient.
+  await db.execute(
+    sql.raw(`ALTER TABLE resources ADD COLUMN IF NOT EXISTS geocode_attempted_at timestamptz`),
+  );
+
+  const pending = and(
+    eq(resources.type, "fire_department"),
+    isNull(resources.lat),
+    isNull(resources.geocodeAttemptedAt),
+    isNotNull(resources.notes),
+  );
+
+  const rows = await db
+    .select({ id: resources.id, notes: resources.notes })
+    .from(resources)
+    .where(pending)
+    .orderBy(resources.id)
+    .limit(limit);
+
+  if (rows.length === 0) return { selected: 0, matched: 0, remaining: 0 };
+
+  const toGeo = rows
+    .map((r) => {
+      const a = parseAddress(r.notes);
+      return a ? ({ id: r.id, ...a } as { id: number } & ParsedAddress) : null;
+    })
+    .filter((x): x is { id: number } & ParsedAddress => x !== null);
+
+  const coords = await censusBatchGeocode(toGeo);
+
+  let matched = 0;
+  if (coords.size > 0) {
+    // All ids and coords are DB integers / finite numbers — safe to inline.
+    const values = [...coords.entries()]
+      .map(([id, c]) => `(${Number(id)}, ${c.lat}, ${c.lng})`)
+      .join(",");
+    await db.execute(
+      sql.raw(
+        `UPDATE resources AS r SET lat = v.lat, lng = v.lng
+         FROM (VALUES ${values}) AS v(id, lat, lng) WHERE r.id = v.id`,
+      ),
+    );
+    matched = coords.size;
+  }
+
+  await db
+    .update(resources)
+    .set({ geocodeAttemptedAt: new Date() })
+    .where(inArray(resources.id, rows.map((r) => r.id)));
+
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(resources)
+    .where(pending);
+
+  return { selected: rows.length, matched, remaining: Number(count) };
 }
 
 // Advocacy-hub pledge (Phase 9). Public write — `wantsUpdates` comes from an

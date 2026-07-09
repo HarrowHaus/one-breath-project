@@ -2,6 +2,7 @@
 
 /* eslint-disable react/no-unescaped-entities */
 import { useState } from "react";
+import { ResourceMap, type MapPoint } from "./ResourceMap";
 import type { LocalResources } from "@/lib/db/queries";
 
 // The local resource finder. Enter a ZIP → the "Your local carbon monoxide
@@ -17,6 +18,9 @@ function ResourceLine({ r }: { r: LocalResources["fireDepartments"][number] }) {
   return (
     <li className="obp-finder__item">
       <span className="text-bold">{r.name}</span>
+      {r.distanceMiles != null ? (
+        <span className="obp-finder__dist"> · {r.distanceMiles} mi</span>
+      ) : null}
       {r.phone ? (
         <>
           {" "}— <a href={telHref(r.phone)}>{r.phone}</a>
@@ -82,6 +86,12 @@ export function ResourceFinder() {
             <div className="obp-finder__group">
               <h3>Your nearest fire department</h3>
               <p className="text-base">Call these for non-emergencies. For emergencies, call 911.</p>
+              {(() => {
+                const pts: MapPoint[] = fire
+                  .filter((r) => r.lat != null && r.lng != null)
+                  .map((r) => ({ name: r.name, lat: r.lat as number, lng: r.lng as number }));
+                return pts.length > 0 ? <ResourceMap points={pts} /> : null;
+              })()}
               <ul className="usa-list usa-list--unstyled">
                 {fire.map((r) => (
                   <ResourceLine key={r.id} r={r} />

@@ -1,0 +1,1 @@
+ALTER TABLE "resources" ADD COLUMN "geocode_attempted_at" timestamp with time zone;

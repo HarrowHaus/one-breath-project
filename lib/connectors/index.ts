@@ -7,7 +7,12 @@
 // must be confirmed against each source's CURRENT official API before the
 // connector will emit data. Connectors that aren't fully configured throw a
 // clear "not configured" error rather than invent numbers.
-import { upsertYearMetric, upsertYearMetricsBulk, type YearMetricInput } from "@/lib/db/queries";
+import {
+  geocodeFireDepartmentsBatch,
+  upsertYearMetric,
+  upsertYearMetricsBulk,
+  type YearMetricInput,
+} from "@/lib/db/queries";
 
 export type ConnectorResult = {
   source: string;
@@ -295,6 +300,25 @@ async function runNeiss(): Promise<ConnectorResult> {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Geocode fire departments — backfill lat/lng from their address (in notes) via
+// the free U.S. Census batch geocoder, so the resources finder can do a real
+// distance/radius search and plot a map. Batched + resumable: run until done.
+// ---------------------------------------------------------------------------
+async function runGeocode(): Promise<ConnectorResult> {
+  const { selected, matched, remaining } = await geocodeFireDepartmentsBatch(1000);
+  const notes =
+    selected === 0
+      ? ["Nothing left to geocode — all fire-department addresses have been attempted."]
+      : [
+          `Geocoded ${matched} of ${selected} fire departments this run (U.S. Census).`,
+          remaining > 0
+            ? `${remaining} still to do — run again to continue.`
+            : "Done — every parseable address has been geocoded.",
+        ];
+  return { source: "U.S. Census geocoder", upserted: matched, notes };
+}
+
 export const CONNECTORS: Record<string, Connector> = {
   airnow: { name: "airnow", label: "EPA AirNow (contextual outdoor CO)", run: runAirNow },
   "cdc-tracking": {
@@ -303,6 +327,7 @@ export const CONNECTORS: Record<string, Connector> = {
     run: runCdcTracking,
   },
   neiss: { name: "neiss", label: "CPSC NEISS", run: runNeiss },
+  geocode: { name: "geocode", label: "Geocode fire departments (Census)", run: runGeocode },
 };
 
 export { NotConfiguredError };

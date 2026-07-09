@@ -176,6 +176,18 @@ export default async function ManagePage({
           </button>
         </form>
 
+        <p className="text-base margin-top-3">
+          Backfill fire-department coordinates (from their address, via the free
+          U.S. Census geocoder) so the resources finder can show a map and true
+          nearest-by-distance results. Batched — click again until it says done.
+        </p>
+        <form action={runConnectorAction} className="usa-form">
+          <input type="hidden" name="connector" value="geocode" />
+          <button className="usa-button usa-button--outline" type="submit">
+            Geocode fire departments (next batch)
+          </button>
+        </form>
+
         {/* ---- Add / update a figure ---- */}
         <h2>Add or update a figure</h2>
         <p className="text-base">

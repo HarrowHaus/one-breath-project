@@ -439,6 +439,17 @@ input:focus-visible,
   color: var(--obp-ink-secondary);
   font-size: 0.95rem;
 }
+.obp-finder__dist {
+  color: var(--obp-primary);
+  font-weight: 600;
+}
+.obp-map {
+  height: 340px;
+  width: 100%;
+  border-radius: 0.25rem;
+  margin: 1rem 0;
+  border: 1px solid #dfe1e2;
+}
 
 /* ============================================================
  * Phase 9 — Act / advocacy + About
